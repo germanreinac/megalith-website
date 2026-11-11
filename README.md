@@ -2,8 +2,8 @@
 
 A small, playful website for **Megalith**, the comic by Germán Reina and Lizz Lunney.
 Visitors tap the sea to push Dji and Skit's boat around a little comic-style ocean,
-collect floating fish that reveal art, and sail to the island city on the horizon,
-where they find the Patreon and newsletter links.
+and catch floating fish that reveal art. The Patreon and newsletter links live
+behind the ? button.
 
 ## See it
 
@@ -25,6 +25,7 @@ The plan, the checklist of art to send, and open questions live in the
 
 ## Status
 
-Play test: steering by ripples, six placeholder fish, a placeholder island,
-and a stand-in boat built from simple shapes. Next: Germán's water art and boat
-model, then hosting (Netlify or Vercel).
+Play test: an open sea you steer across with ripples, fish to catch, a stand-in boat
+built from simple shapes after the concept drawing, and comic-style water, outlines and
+lettering (Bruno Ace). Next: Germán's water art and boat model, then hosting
+(Netlify or Vercel).

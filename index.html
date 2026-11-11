@@ -6,29 +6,36 @@
 <title>Megalith</title>
 <meta name="description" content="Sail with Dji and Skit across a little comic sea. Megalith, a comic by Germán Reina and Lizz Lunney.">
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Itim&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bruno+Ace&display=swap">
 <style>
-  /* Layout: the whole screen is one comic page; the 3D sea sits inside a rounded pink panel,
-     with a narration box top-left and the sea-state buttons at the bottom. Colours sampled from the comic. */
+  /* Layout: the whole screen is one comic panel with the 3D sea inside it.
+     Title top-left, fish counter top-right, three round buttons bottom-right, hint bottom-centre.
+     Colours are sampled from the comic pages; the font matches the comic's lettering. */
   :root {
     --page: #fffafc;          /* paper around the panel */
     --panel-line: #d6559f;    /* the comic's pink panel borders */
-    --ink: #2b1d33;           /* lettering */
-    --box: #ffffff;           /* narration box */
+    --ink: #1d1626;           /* lettering */
+    --box: #ffffff;           /* caption boxes and speech bubbles */
     --accent: #d6559f;
-    --font: "Itim", "Comic Neue", "Trebuchet MS", system-ui, sans-serif;
+    --soft: #6b5a76;          /* quieter text */
+    --font: "Bruno Ace", "Trebuchet MS", "Segoe UI", system-ui, sans-serif;
     color-scheme: light;
   }
   [hidden] { display: none !important; }
   html, body { height: 100%; }
-  body { margin: 0; background: var(--page); color: var(--ink); font-family: var(--font); overflow: hidden; }
+  body {
+    margin: 0; background: var(--page); color: var(--ink); font-family: var(--font); overflow: hidden;
+    /* Stop fast tapping from selecting text, zooming or showing the long-press menu */
+    -webkit-user-select: none; user-select: none; -webkit-touch-callout: none;
+    -webkit-tap-highlight-color: transparent; touch-action: none; overscroll-behavior: none;
+  }
 
   .panel {
     position: fixed;
-    top: calc(12px + env(safe-area-inset-top, 0px));
-    bottom: calc(12px + env(safe-area-inset-bottom, 0px));
-    left: max(12px, env(safe-area-inset-left, 0px));
-    right: max(12px, env(safe-area-inset-right, 0px));
+    top: calc(10px + env(safe-area-inset-top, 0px));
+    bottom: calc(10px + env(safe-area-inset-bottom, 0px));
+    left: max(10px, env(safe-area-inset-left, 0px));
+    right: max(10px, env(safe-area-inset-right, 0px));
     border: 4px solid var(--panel-line);
     border-radius: 26px;
     overflow: hidden;
@@ -36,126 +43,149 @@
   }
   #scene { position: absolute; inset: 0; width: 100%; height: 100%; display: block; touch-action: none; cursor: pointer; }
 
-  /* Film grain over everything, like the printed pages */
+  /* Light print grain over everything (the sea and sky also have their own grain) */
   .grain {
-    position: absolute; inset: 0; pointer-events: none; opacity: 0.3; mix-blend-mode: multiply;
+    position: absolute; inset: 0; pointer-events: none; opacity: 0.2; mix-blend-mode: multiply;
     background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='180' height='180'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.95' numOctaves='2' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 0.35  0 0 0 0 0.2  0 0 0 0 0.4  0 0 0 0.6 0'/></filter><rect width='100%25' height='100%25' filter='url(%23n)'/></svg>");
   }
 
   /* Little pink dashes around the page edge, as on the comic pages */
   .dash { position: fixed; width: 3px; height: 11px; border-radius: 2px; background: var(--panel-line); pointer-events: none; }
 
+  /* Title box */
   .caption {
-    position: absolute; top: 14px; left: 14px;
-    max-width: min(330px, calc(100% - 28px));
-    background: var(--box);
-    border: 3px solid var(--panel-line);
-    border-radius: 18px;
-    padding: 10px 14px 11px;
-    display: grid; gap: 3px;
+    position: absolute; top: 12px; left: 12px;
+    max-width: min(300px, calc(100% - 130px));
+    background: var(--box); border: 3px solid var(--panel-line); border-radius: 16px;
+    padding: 9px 13px 10px; display: grid; gap: 4px; pointer-events: none;
   }
-  .caption .step { font-size: 12px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--accent); }
-  .caption h1 { margin: 0; font-weight: 400; font-size: clamp(26px, 6vw, 32px); line-height: 1.05; text-wrap: balance; }
-  .caption p { margin: 0; font-size: 15px; line-height: 1.3; }
+  .caption h1 { margin: 0; font-weight: 400; font-size: clamp(19px, 5vw, 24px); line-height: 1; letter-spacing: 0.04em; text-transform: uppercase; }
+  .caption .by { font-size: 10px; line-height: 1.3; color: var(--accent); }
+  .caption .story { margin: 0; font-size: 12px; line-height: 1.4; max-height: 6em; overflow: hidden; transition: max-height .6s, opacity .6s, margin .6s; }
+  .caption.short .story { max-height: 0; opacity: 0; margin-top: -4px; }
 
-  .controls {
-    position: absolute; left: 50%; bottom: 14px; transform: translateX(-50%);
-    display: grid; justify-items: center; gap: 7px;
-    width: max-content; max-width: calc(100% - 24px);
+  /* Fish counter */
+  .count {
+    position: absolute; top: 12px; right: 12px;
+    display: flex; align-items: center; gap: 7px;
+    background: var(--box); border: 3px solid var(--panel-line); border-radius: 999px;
+    padding: 7px 13px 7px 10px; font-size: 14px; pointer-events: none;
   }
-  .pill { font: 400 15px/1 var(--font); color: var(--ink); background: var(--box); border: 3px solid var(--panel-line); border-radius: 999px; padding: 7px 13px 8px; }
-  button.pill { cursor: pointer; }
-  button.pill:focus-visible, .btn:focus-visible { outline: 3px solid var(--ink); outline-offset: 2px; }
-  .hud { position: absolute; top: 14px; right: 14px; display: grid; justify-items: end; gap: 8px; }
-  @media (max-width: 600px) {
-    .hud { top: auto; right: auto; left: 50%; bottom: 72px; transform: translateX(-50%); grid-auto-flow: column; }
+  .count svg { width: 26px; height: 16px; }
+  .count.bump { animation: bump .4s cubic-bezier(.3,1.8,.5,1); }
+  @keyframes bump { 40% { transform: scale(1.25); } }
+
+  /* Round buttons */
+  .tools { position: absolute; right: 12px; bottom: 12px; display: grid; gap: 8px; }
+  .round {
+    width: 46px; height: 46px; border-radius: 50%; padding: 0;
+    display: grid; place-items: center; cursor: pointer;
+    background: var(--box); color: var(--ink); border: 3px solid var(--panel-line);
+    font: 400 18px/1 var(--font);
+    transition: transform .12s;
   }
+  .round svg { width: 22px; height: 22px; fill: none; stroke: currentColor; stroke-width: 2.2; stroke-linecap: round; stroke-linejoin: round; }
+  .round:active { transform: scale(.9); }
+  .round:focus-visible, .btn:focus-visible { outline: 3px solid var(--ink); outline-offset: 2px; }
+  @media (hover: hover) { .round:hover { background: #fdeef6; } }
+
+  .hint {
+    position: absolute; left: 50%; bottom: 16px; transform: translateX(-50%);
+    max-width: calc(100% - 150px); text-align: center;
+    font-size: 12px; line-height: 1.35; background: var(--box);
+    border: 2.5px solid var(--panel-line); border-radius: 999px; padding: 6px 14px 7px;
+    pointer-events: none; transition: opacity .6s;
+  }
+  .hint.off { opacity: 0; }
 
   /* Speech bubble that follows the boat */
   .bubble {
-    position: absolute; left: 0; top: 0; max-width: 220px;
-    background: #fff; border: 2.5px solid var(--ink); border-radius: 18px;
-    padding: 7px 12px 8px; font-size: 15px; line-height: 1.25;
-    transform: translate(-50%, -100%); pointer-events: none;
-    transition: opacity .25s;
+    position: absolute; left: 0; top: 0; width: max-content; max-width: min(230px, 62vw);
+    background: #fff; border: 2.5px solid var(--ink); border-radius: 16px;
+    padding: 7px 12px 8px; font-size: 12px; line-height: 1.4;
+    transform: translate(-50%, -100%); pointer-events: none; transition: opacity .25s;
   }
   .bubble b { font-weight: 400; color: var(--accent); }
   .bubble::after {
-    content: ""; position: absolute; left: 50%; bottom: -12px; width: 14px; height: 14px;
+    content: ""; position: absolute; left: 50%; bottom: -9px; width: 13px; height: 13px;
     background: #fff; border-right: 2.5px solid var(--ink); border-bottom: 2.5px solid var(--ink);
-    transform: translateX(-50%) rotate(45deg) skew(10deg, 10deg); border-bottom-right-radius: 4px;
+    transform: translateX(-50%) rotate(45deg); border-bottom-right-radius: 4px;
   }
   .bubble.off { opacity: 0; }
 
-  /* Round inset panel (collected items) and the arrival panel */
-  .overlay { position: absolute; inset: 0; display: grid; place-items: center; padding: 16px; background: rgba(255, 240, 246, 0.35); }
+  /* Round inset panel that pops in when you catch a fish (Germán's art goes in it later) */
   .inset {
-    width: min(260px, 72vw); aspect-ratio: 1; max-width: 100%; border-radius: 50%;
+    position: absolute; top: 64px; right: 12px; width: 150px; height: 150px; border-radius: 50%;
     background: #fff; border: 4px solid var(--panel-line);
-    display: grid; place-content: center; text-align: center; gap: 6px; padding: 28px;
-    animation: pop .35s cubic-bezier(.3,1.6,.5,1);
+    display: grid; place-content: center; justify-items: center; text-align: center; gap: 4px; padding: 16px;
+    pointer-events: none; transition: transform .35s cubic-bezier(.3,1.6,.5,1), opacity .25s;
   }
-  .inset .tag, .arrive .tag { font-size: 12px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--accent); }
-  .inset h2, .arrive h2 { margin: 0; font-weight: 400; font-size: 22px; line-height: 1.1; text-wrap: balance; }
-  .inset p, .arrive p { margin: 0; font-size: 14px; line-height: 1.3; color: #5a4a63; }
-  .placeholder-art { margin: 4px auto; width: 92px; height: 62px; border: 2px dashed #c9a6d8; border-radius: 12px; display: grid; place-items: center; font-size: 12px; color: #9a7aab; }
-  .stack { display: grid; justify-items: center; gap: 12px; }
-  .btn { font: 400 17px/1 var(--font); border: 3px solid var(--panel-line); border-radius: 999px; padding: 9px 18px 10px; cursor: pointer; background: var(--accent); color: #fff; }
+  .inset.off { transform: scale(.5); opacity: 0; }
+  .inset .tag { font-size: 9px; letter-spacing: 0.06em; text-transform: uppercase; color: var(--accent); }
+  .inset .art { width: 66px; height: 44px; border: 2px dashed #c9a6d8; border-radius: 10px; display: grid; place-items: center; font-size: 9px; color: #9a7aab; }
+  .inset p { margin: 0; font-size: 10px; line-height: 1.3; color: var(--soft); }
+
+  /* "About the comic" panel */
+  .overlay { position: absolute; inset: 0; display: grid; place-items: center; padding: 16px; background: rgba(255, 240, 246, 0.55); }
+  .card {
+    width: min(400px, 100%); background: #fff; border: 4px solid var(--panel-line); border-radius: 24px;
+    padding: 22px 20px 20px; display: grid; gap: 10px; text-align: center;
+    animation: pop .35s cubic-bezier(.3,1.5,.5,1);
+  }
+  .card h2 { margin: 0; font-weight: 400; font-size: 22px; letter-spacing: 0.04em; text-transform: uppercase; }
+  .card p { margin: 0; font-size: 12px; line-height: 1.5; }
+  .card .row { display: flex; flex-wrap: wrap; justify-content: center; gap: 8px; margin-top: 4px; }
+  .card .note { font-size: 10px; color: var(--soft); }
+  .btn { font: 400 13px/1 var(--font); border: 3px solid var(--panel-line); border-radius: 999px; padding: 10px 16px; cursor: pointer; background: var(--accent); color: #fff; }
   .btn.ghost { background: #fff; color: var(--ink); }
   .btn[aria-disabled="true"] { opacity: .55; cursor: default; }
-  .arrive {
-    width: min(420px, 100%); background: #fff; border: 4px solid var(--panel-line); border-radius: 26px;
-    padding: 22px 22px 20px; display: grid; gap: 10px; text-align: center;
-    animation: pop .4s cubic-bezier(.3,1.5,.5,1);
-  }
-  .arrive .row { display: flex; flex-wrap: wrap; justify-content: center; gap: 10px; margin-top: 6px; }
-  .note { font-size: 12px; color: #8a7a93; }
   @keyframes pop { from { transform: scale(.6); opacity: 0; } to { transform: scale(1); opacity: 1; } }
-  @media (prefers-reduced-motion: reduce) { .inset, .arrive { animation: none; } }
-
-  .hint { font-size: 14px; background: var(--box); border: 2px solid var(--panel-line); border-radius: 999px; padding: 3px 12px 4px; text-align: center; }
-  .error { position: absolute; inset: auto 16px 45% 16px; text-align: center; background: var(--box); border: 3px solid var(--panel-line); border-radius: 18px; padding: 14px; }
+  @media (prefers-reduced-motion: reduce) { .card, .count.bump { animation: none; } .inset { transition: opacity .25s; } }
+  .error { position: absolute; inset: auto 16px 45% 16px; text-align: center; background: var(--box); border: 3px solid var(--panel-line); border-radius: 18px; padding: 14px; font-size: 13px; }
 </style>
 </head>
 <body>
 <div class="panel" id="panel">
-  <canvas id="scene" aria-label="The adventurers' wooden boat bobbing on a mint-green cartoon sea. Tap the water to make waves."></canvas>
+  <canvas id="scene" aria-label="Dji and Skit's wooden boat on a mint-green comic sea. Tap the water to make waves that push the boat."></canvas>
   <div class="grain"></div>
-  <div class="caption">
-    <span class="step">Step 3 · Play test</span>
+
+  <div class="caption" id="caption">
     <h1>Megalith</h1>
-    <p>Fired from the bar, Dji and Skit had no choice now. They were adventuring!</p>
+    <span class="by">A comic by Germán Reina &amp; Lizz Lunney</span>
+    <p class="story">Fired from the bar, Dji and Skit had no choice now. They were adventuring!</p>
   </div>
-  <div class="hud">
-    <span class="pill" id="fish-count">Fish 0 / 6</span>
-    <button type="button" class="pill" id="weather">Weather: Calm</button>
+
+  <div class="count" id="count" aria-live="polite">
+    <svg viewBox="0 0 26 16" aria-hidden="true"><path d="M2 3l5 5-5 5zM7 8c2-4 6-6 10-6 4 0 7 3 8 6-1 3-4 6-8 6-4 0-8-2-10-6z" fill="#8fb3f5" stroke="#3a4fc4" stroke-width="1.6" stroke-linejoin="round"/><circle cx="19.5" cy="6.5" r="1.2" fill="#1d1626"/></svg>
+    <span id="count-n">0</span>
   </div>
+
+  <div class="inset off" id="inset">
+    <span class="tag" id="inset-tag">Fish 1</span>
+    <div class="art">art here</div>
+    <p id="inset-text">A sketch goes here.</p>
+  </div>
+
   <div class="bubble off" id="bubble" aria-live="polite"></div>
-  <div class="controls">
-    <span class="hint">Tap the sea behind the boat to push it · drag to look around</span>
+  <span class="hint" id="hint">Tap the sea behind the boat to push it</span>
+
+  <div class="tools">
+    <button type="button" class="round" id="weather" aria-label="Weather: calm. Tap to change." title="Change the weather"></button>
+    <button type="button" class="round" id="sound" aria-label="Sound is off. Tap to turn on." title="Sound"></button>
+    <button type="button" class="round" id="about-open" aria-label="About the comic" title="About the comic">?</button>
   </div>
-  <div class="overlay" id="inset-layer" hidden>
-    <div class="stack">
-      <div class="inset" role="dialog" aria-labelledby="inset-title">
-        <span class="tag" id="inset-tag">Found 1 of 6</span>
-        <h2 id="inset-title">A fish!</h2>
-        <div class="placeholder-art">art here</div>
-        <p id="inset-text">Germán's sketch goes here.</p>
-      </div>
-      <button type="button" class="btn ghost" id="inset-close">Keep sailing</button>
-    </div>
-  </div>
-  <div class="overlay" id="arrive-layer" hidden>
-    <div class="arrive" role="dialog" aria-labelledby="arrive-title">
-      <span class="tag">You made it</span>
-      <h2 id="arrive-title">Dji and Skit reached the island!</h2>
-      <p>The rest of their adventure is in Megalith, by Germán Reina and Lizz Lunney.</p>
+
+  <div class="overlay" id="about" hidden>
+    <div class="card" role="dialog" aria-labelledby="about-title">
+      <h2 id="about-title">Megalith</h2>
+      <p>Dji and Skit lost their jobs, found a boat, and went looking for adventure. Megalith is a comic by Germán Reina and Lizz Lunney.</p>
       <div class="row">
-        <span class="btn" role="link" aria-disabled="true">Support us on Patreon</span>
-        <span class="btn ghost" role="link" aria-disabled="true">Get the newsletter</span>
+        <span class="btn" role="link" aria-disabled="true">Patreon</span>
+        <span class="btn ghost" role="link" aria-disabled="true">Newsletter</span>
       </div>
-      <span class="note">Preview: the Patreon and newsletter links go in once we have them.</span>
-      <div class="row"><button type="button" class="btn ghost" id="sail-again">Sail again</button></div>
+      <span class="note">Preview: these two links are added once we have them.</span>
+      <p>Tap the sea to make waves. Drag to look around. Pinch or scroll to zoom.</p>
+      <div class="row"><button type="button" class="btn ghost" id="about-close">Back to the sea</button></div>
     </div>
   </div>
 </div>
@@ -170,7 +200,7 @@
    [0,0.22,80],[0,0.58,100],[0,0.86,75],[1,0.3,95],[1,0.66,82]].forEach(([x, y, rot]) => {
     const d = document.createElement('span'); d.className = 'dash';
     if (y === 0 || y === 1) { d.style.left = `${x * 100}%`; d.style[y ? 'bottom' : 'top'] = `env(safe-area-inset-${y ? 'bottom' : 'top'}, 0px)`; }
-    else { d.style.top = `${y * 100}%`; d.style[x ? 'right' : 'left'] = '3px'; }
+    else { d.style.top = `${y * 100}%`; d.style[x ? 'right' : 'left'] = '2px'; }
     d.style.transform = `rotate(${rot}deg)`;
     document.body.appendChild(d);
   });
@@ -180,12 +210,12 @@
     return;
   }
 
-  // ------------------------------------------------------------------
+  // ==================================================================
   // WAVES
   // The sea is a sum of a few sine waves plus the ripples people make.
   // The same maths runs in the water shader (what you see) and here in
-  // JavaScript (how the boat floats), so the boat always sits on the surface.
-  // ------------------------------------------------------------------
+  // JavaScript (how the boat floats). Change both together.
+  // ==================================================================
   const WAVES = [
     { dir: [1.0, 0.3],   k: 0.32, speed: 1.0, amp: 0.55 },
     { dir: [-0.4, 1.0],  k: 0.50, speed: 1.3, amp: 0.30 },
@@ -208,7 +238,7 @@
     let h = 0;
     for (const r of ripples) {
       if (r.w <= 0) continue;
-      const age = clock - r.z; if (age < 0) continue;
+      const age = clock - r.z; if (age < 0 || age > 12) continue;
       const d = Math.hypot(x - r.x, z - r.y);
       const u = d - age * RIP.speed;
       h += r.w * Math.cos(u * RIP.k) * Math.exp(-u * u * RIP.width) * Math.exp(-age * RIP.fade) / (1 + d * RIP.spread);
@@ -218,6 +248,8 @@
 
   const f = n => n.toFixed(5);
   const glslWaves = `
+    uniform float uTime, uClock, uAmp;
+    uniform vec4 uRip[${RIP.count}];
     float waveH(vec2 p){ float h = 0.0;
 ${WAVES.map(w => `      h += ${f(w.amp)} * sin(${f(w.k)} * dot(vec2(${f(w.dir[0])}, ${f(w.dir[1])}), p) + ${f(w.speed)} * uTime);`).join('\n')}
       return h * uAmp; }
@@ -225,417 +257,638 @@ ${WAVES.map(w => `      h += ${f(w.amp)} * sin(${f(w.k)} * dot(vec2(${f(w.dir[0]
       for (int i = 0; i < ${RIP.count}; i++) {
         vec4 r = uRip[i];
         if (r.w <= 0.0) continue;
-        float age = uClock - r.z; if (age < 0.0) continue;
+        float age = uClock - r.z; if (age < 0.0 || age > 12.0) continue;
         float d = length(p - r.xy);
         float u = d - age * ${f(RIP.speed)};
         h += r.w * cos(u * ${f(RIP.k)}) * exp(-u * u * ${f(RIP.width)}) * exp(-age * ${f(RIP.fade)}) / (1.0 + d * ${f(RIP.spread)});
       }
       return h; }
   `;
+  const glslNoise = `
+    float hash(vec2 p){ vec3 p3 = fract(vec3(p.xyx) * 0.1031); p3 += dot(p3, p3.yzx + 33.33); return fract((p3.x + p3.y) * p3.z); }
+    float vnoise(vec2 p){
+      vec2 i = floor(p), f = fract(p); vec2 u = f*f*f*(f*(f*6.0-15.0)+10.0);
+      return mix(mix(hash(i), hash(i+vec2(1.0,0.0)), u.x), mix(hash(i+vec2(0.0,1.0)), hash(i+vec2(1.0,1.0)), u.x), u.y);
+    }
+  `;
 
-  // ------------------------------------------------------------------
-  // SEA STATES (the three buttons). Colours picked from the comic pages;
-  // the scene eases smoothly between them.
-  // ------------------------------------------------------------------
+  // ==================================================================
+  // WEATHER (the round button cycles through these). Colours picked from
+  // the comic pages; the scene eases smoothly from one to the next.
+  // ==================================================================
   const STATES = {
-    calm:  { amp: 0.40, speed: 0.75, foam: 0.97, sun: 1, sky: '#f5c3c6', horizon: '#fbe6e2', haze: '#e9f8f0',
-             deep: '#5cc1bb', mid: '#97e0cc', light: '#c9f3e2', line: '#3a4fc4', cloud: '#f4e2f2' },
-    wind:  { amp: 0.95, speed: 1.15, foam: 0.82, sun: 1, sky: '#e7b5d4', horizon: '#f6e0ec', haze: '#e3f4ee',
-             deep: '#45aab3', mid: '#80d2c7', light: '#bcecdc', line: '#3047bb', cloud: '#ecd8f0' },
-    storm: { amp: 1.90, speed: 1.55, foam: 0.66, sun: 0, sky: '#8e86b9', horizon: '#c8c1dc', haze: '#c9dcdc',
-             deep: '#2b7f9a', mid: '#4fa9b2', light: '#8bd0c6', line: '#23308f', cloud: '#bdb0d3' },
+    calm:  { amp: 0.40, speed: 0.75, foam: 0.97, sun: 1, sky: '#f4bfc6', horizon: '#fbe6e2', haze: '#e6f7ee',
+             deep: '#4fb9b6', mid: '#8fdcc9', light: '#c6f2df', line: '#3550c8', cloud: '#f6e6f4' },
+    wind:  { amp: 0.95, speed: 1.15, foam: 0.80, sun: 1, sky: '#e3b1d6', horizon: '#f6e0ec', haze: '#e0f3ec',
+             deep: '#3fa4b2', mid: '#78cfc6', light: '#b6ead9', line: '#2c44bd', cloud: '#eed9f1' },
+    storm: { amp: 1.90, speed: 1.55, foam: 0.62, sun: 0, sky: '#8a82b8', horizon: '#c6bfdb', haze: '#c4d9db',
+             deep: '#27799a', mid: '#48a2b0', light: '#86ccc4', line: '#1f2b8c', cloud: '#b9acd1' },
   };
-  const toColor = s => new THREE.Color(s);
-  for (const st of Object.values(STATES)) for (const [k, v] of Object.entries(st)) if (typeof v === 'string') st[k + 'C'] = toColor(v);
-  let target = STATES.calm;
+  const ORDER = ['calm', 'wind', 'storm'];
+  for (const st of Object.values(STATES)) for (const [k, v] of Object.entries(st)) if (typeof v === 'string') st[k + 'C'] = new THREE.Color(v);
+  let weatherIdx = 0, target = STATES.calm;
   const cur = {};
-  for (const [k, v] of Object.entries(target)) if (!k.endsWith('C')) cur[k] = typeof v === 'string' ? toColor(v) : v;
+  for (const [k, v] of Object.entries(target)) if (!k.endsWith('C')) cur[k] = typeof v === 'string' ? new THREE.Color(v) : v;
 
-  const SUN_DIR = new THREE.Vector3(-0.85, 0.42, -0.35).normalize();
+  const SUN_DIR = new THREE.Vector3(-0.8, 0.11, -0.45).normalize();   // where the sun sits in the sky
+  const LIGHT_DIR = new THREE.Vector3(-0.55, 0.75, 0.35).normalize();  // where the light on objects comes from
   const BOAT_INK = new THREE.Color('#4b2a7a');   // purple line colour from the boat drawing
-  const CLOUD_INK = new THREE.Color('#8f5ea3');  // purple outline used on clouds
+  const CLOUD_INK = new THREE.Color('#8f5ea3');
+  const WATER_INK = new THREE.Color('#3550c8');
+  const SHADE_TINT = new THREE.Color(0.86, 0.75, 0.90);  // shadows lean pink-purple, as in the comic's colouring
 
-  // ------------------------------------------------------------------
+  // ==================================================================
   // RENDERER, SCENE, CAMERA
-  // ------------------------------------------------------------------
+  // ==================================================================
   const canvas = document.getElementById('scene');
   const isSmall = Math.min(window.innerWidth, window.innerHeight) < 600;
   const renderer = new THREE.WebGLRenderer({ canvas, antialias: true });
-  renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, isSmall ? 1.75 : 2));
+  let pixelRatio = Math.min(window.devicePixelRatio || 1, isSmall ? 1.6 : 2);
+  renderer.setPixelRatio(pixelRatio);
 
   const scene = new THREE.Scene();
-  scene.fog = new THREE.Fog(cur.horizon.clone(), 90, 320);
   const camera = new THREE.PerspectiveCamera(45, 1, 0.1, 1000);
+  const shared = { uLightDir: { value: LIGHT_DIR }, uFlash: { value: 0 }, uPx: { value: 0.002 } };
 
-  // ------------------------------------------------------------------
-  // SKY: soft pink gradient, a pale haze at the horizon and the yellow sun
-  // ------------------------------------------------------------------
-  const skyUniforms = {
-    uTop: { value: cur.sky.clone() }, uHorizon: { value: cur.horizon.clone() }, uHaze: { value: cur.haze.clone() },
-    uSunDir: { value: SUN_DIR }, uSun: { value: 1 }, uFlash: { value: 0 },
-  };
+  // ==================================================================
+  // SKY: soft pink gradient with print grain, and a pale haze at the horizon
+  // ==================================================================
+  const skyUniforms = { uTop: { value: cur.sky.clone() }, uHorizon: { value: cur.horizon.clone() }, uHaze: { value: cur.haze.clone() }, uFlash: shared.uFlash };
   const sky = new THREE.Mesh(
     new THREE.SphereGeometry(400, 32, 16),
     new THREE.ShaderMaterial({
-      side: THREE.BackSide, depthWrite: false, fog: false, uniforms: skyUniforms,
+      side: THREE.BackSide, depthWrite: false, uniforms: skyUniforms,
       vertexShader: `varying vec3 vDir; void main(){ vDir = normalize(position); gl_Position = projectionMatrix * modelViewMatrix * vec4(position,1.0); }`,
       fragmentShader: `
-        uniform vec3 uTop, uHorizon, uHaze, uSunDir; uniform float uSun, uFlash; varying vec3 vDir;
+        uniform vec3 uTop, uHorizon, uHaze; uniform float uFlash; varying vec3 vDir;
+        ${glslNoise}
         void main(){
           vec3 d = normalize(vDir);
-          vec3 col = mix(uHaze, uHorizon, smoothstep(-0.01, 0.07, d.y));
-          col = mix(col, uTop, smoothstep(0.08, 0.55, d.y));
-          float s = dot(d, normalize(uSunDir));
-          if (s > 0.9955) col = mix(col, vec3(0.976, 0.765, 0.373), uSun);
-          else if (s > 0.9942) col = mix(col, vec3(0.48, 0.29, 0.20), uSun);
+          vec3 col = mix(uHaze, uHorizon, smoothstep(-0.01, 0.06, d.y));
+          float up = smoothstep(0.06, 0.5, d.y);
+          col = mix(col, uTop, up);
+          col -= (hash(gl_FragCoord.xy) - 0.5) * 0.07 * (0.3 + up);   // grain, stronger where the colour deepens
           col += uFlash * vec3(0.35, 0.3, 0.45);
           gl_FragColor = vec4(col, 1.0);
         }`,
     })
   );
+  sky.renderOrder = -2;
   scene.add(sky);
 
-  // ------------------------------------------------------------------
-  // WATER: mint sea with blobby flat patches outlined in blue, like the comic.
-  // The grid is denser near the middle so small ripples look smooth.
-  // ------------------------------------------------------------------
+  // ==================================================================
+  // DRAWN TEXTURES (made in code for now; Germán's art replaces these later)
+  // In these textures the red channel is "ink" (0 = line) and green is tone.
+  // ==================================================================
+  function makeTexture(w, h, draw, repeat) {
+    const c = document.createElement('canvas'); c.width = w; c.height = h;
+    const g = c.getContext('2d');
+    g.fillStyle = 'rgb(255,255,0)'; g.fillRect(0, 0, w, h);
+    g.lineCap = 'round'; g.lineJoin = 'round';
+    draw(g, w, h);
+    const t = new THREE.CanvasTexture(c);
+    if (repeat) t.wrapS = t.wrapT = THREE.RepeatWrapping;
+    t.anisotropy = 4;
+    return t;
+  }
+  const INKC = 'rgb(0,255,0)', TONE = 'rgb(255,150,0)';
+  let seed = 7; const rnd = () => (seed = (seed * 16807) % 2147483647) / 2147483647;   // repeatable random numbers
+  function ticks(g, w, h, n, len) {   // the short dash marks Germán draws on surfaces
+    g.strokeStyle = INKC; g.lineWidth = 3;
+    for (let i = 0; i < n; i++) {
+      const x = rnd() * w, y = rnd() * h, a = (rnd() - 0.5) * 0.5, l = len * (0.5 + rnd());
+      g.beginPath(); g.moveTo(x, y); g.lineTo(x + Math.cos(a) * l, y + Math.sin(a) * l); g.stroke();
+    }
+  }
+  const WHITE_TEX = makeTexture(2, 2, () => {});
+  const woodTex = makeTexture(256, 256, (g, w, h) => ticks(g, w, h, 9, 22), true);
+  const woodVTex = makeTexture(256, 256, (g, w, h) => { g.translate(w, 0); g.rotate(Math.PI / 2); ticks(g, h, w, 9, 22); }, true);
+  const hullTex = makeTexture(1024, 256, (g, w, h) => {
+    // lighter patches on the hull, like the blob on the concept drawing
+    for (const [cx, cy, s] of [[250, 120, 1], [760, 135, 0.8]]) {
+      g.fillStyle = TONE; g.strokeStyle = INKC; g.lineWidth = 3.5;
+      g.beginPath();
+      for (let i = 0; i <= 40; i++) {
+        const a = i / 40 * Math.PI * 2, r = (46 + 14 * Math.sin(a * 3 + cx) + 8 * Math.sin(a * 5)) * s;
+        g[i ? 'lineTo' : 'moveTo'](cx + Math.cos(a) * r * 1.5, cy + Math.sin(a) * r * 0.8);
+      }
+      g.closePath(); g.fill(); g.stroke();
+    }
+    ticks(g, w, h, 26, 30);
+  }, true);
+  const deckTex = makeTexture(512, 512, (g, w, h) => {
+    // planks laid like bricks
+    const rowH = 52;
+    for (let r = 0, y = 0; y < h; r++, y += rowH) {
+      let x = -((r * 97) % 150);
+      while (x < w) {
+        const len = 110 + rnd() * 90;
+        if (rnd() < 0.35) { g.fillStyle = TONE; g.fillRect(x, y, len, rowH); }
+        g.strokeStyle = INKC; g.lineWidth = 4; g.strokeRect(x, y, len, rowH);
+        g.lineWidth = 2.5;
+        g.beginPath(); g.moveTo(x + 18 + rnd() * 30, y + rowH * 0.5); g.lineTo(x + 50 + rnd() * 40, y + rowH * 0.5 + 3); g.stroke();
+        x += len;
+      }
+    }
+    // hatch with a ladder
+    g.fillStyle = 'rgb(40,0,0)'; g.strokeStyle = INKC; g.lineWidth = 5;
+    g.beginPath(); g.ellipse(396, 150, 42, 30, 0.2, 0, Math.PI * 2); g.fill(); g.stroke();
+    g.strokeStyle = 'rgb(255,255,0)'; g.lineWidth = 4;
+    g.beginPath(); g.moveTo(380, 132); g.lineTo(380, 172); g.moveTo(410, 130); g.lineTo(410, 172);
+    g.moveTo(380, 142); g.lineTo(410, 142); g.moveTo(380, 156); g.lineTo(410, 156); g.stroke();
+  });
+
+  // ==================================================================
+  // COMIC SHADING for objects: two flat tones (lit, and a pink-purple
+  // tinted shadow), optional drawn texture, plus an ink outline.
+  // ==================================================================
+  function toon(color, opts = {}) {
+    const c = new THREE.Color(color);
+    return new THREE.ShaderMaterial({
+      side: opts.side || THREE.FrontSide,
+      uniforms: {
+        uColor: { value: c }, uShade: { value: opts.shade ? new THREE.Color(opts.shade) : c.clone().multiply(SHADE_TINT) },
+        uInk: { value: opts.ink || BOAT_INK }, uMap: { value: opts.map || WHITE_TEX }, uRepeat: { value: new THREE.Vector2(...(opts.repeat || [1, 1])) },
+        uCut: { value: opts.cut === undefined ? -0.08 : opts.cut }, uLightDir: shared.uLightDir, uFlash: shared.uFlash,
+      },
+      vertexShader: `
+        uniform vec3 uLightDir; uniform vec2 uRepeat;
+        varying vec3 vN; varying vec3 vL; varying vec2 vUv;
+        void main(){
+          vN = normalMatrix * normal;
+          vL = (viewMatrix * vec4(uLightDir, 0.0)).xyz;
+          vUv = uv * uRepeat;
+          gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+        }`,
+      fragmentShader: `
+        uniform vec3 uColor, uShade, uInk; uniform sampler2D uMap; uniform float uCut, uFlash;
+        varying vec3 vN; varying vec3 vL; varying vec2 vUv;
+        void main(){
+          vec3 n = normalize(vN); if (!gl_FrontFacing) n = -n;
+          float lit = smoothstep(uCut - 0.012, uCut + 0.012, dot(n, normalize(vL)));
+          vec3 col = mix(uShade, uColor, lit);
+          vec4 t = texture2D(uMap, vUv);
+          col *= mix(1.1, 1.0, t.g);          // tone patches are a touch lighter
+          col = mix(uInk, col, t.r);          // drawn lines
+          col += uFlash * 0.25;
+          gl_FragColor = vec4(col, 1.0);
+        }`,
+    });
+  }
+
+  // Outline = a copy of the shape, pushed outwards by a fixed number of screen pixels,
+  // drawn inside-out in the ink colour. Needs smoothed normals so corners don't split.
+  function addSmoothNormals(geo) {
+    const pos = geo.attributes.position, nor = geo.attributes.normal, sums = new Map();
+    const key = i => Math.round(pos.getX(i) * 500) + '_' + Math.round(pos.getY(i) * 500) + '_' + Math.round(pos.getZ(i) * 500);
+    for (let i = 0; i < pos.count; i++) {
+      const k = key(i); let s = sums.get(k); if (!s) sums.set(k, s = new THREE.Vector3());
+      s.x += nor.getX(i); s.y += nor.getY(i); s.z += nor.getZ(i);
+    }
+    const out = new Float32Array(pos.count * 3);
+    for (let i = 0; i < pos.count; i++) { const s = sums.get(key(i)).clone().normalize(); out.set([s.x, s.y, s.z], i * 3); }
+    geo.setAttribute('oNormal', new THREE.BufferAttribute(out, 3));
+  }
+  const outlineMats = new Map();
+  function outlineMat(color, px) {
+    const k = color.getHexString() + px;
+    if (!outlineMats.has(k)) outlineMats.set(k, new THREE.ShaderMaterial({
+      side: THREE.BackSide,
+      uniforms: { uColor: { value: color }, uThick: { value: px }, uPx: shared.uPx },
+      vertexShader: `
+        attribute vec3 oNormal; uniform float uThick, uPx;
+        void main(){
+          vec4 mv = modelViewMatrix * vec4(position, 1.0);
+          mv.xyz += normalize(normalMatrix * oNormal) * uThick * uPx * max(-mv.z, 0.1);
+          gl_Position = projectionMatrix * mv;
+        }`,
+      fragmentShader: `uniform vec3 uColor; void main(){ gl_FragColor = vec4(uColor, 1.0); }`,
+    }));
+    return outlineMats.get(k);
+  }
+  function withOutline(mesh, px = 2.2, color = BOAT_INK) {
+    if (!mesh.geometry.attributes.oNormal) addSmoothNormals(mesh.geometry);
+    mesh.add(new THREE.Mesh(mesh.geometry, outlineMat(color, px)));
+    return mesh;
+  }
+
+  // ==================================================================
+  // WATER: mint sea made of gel-like blobs, as in the comic. Each blob has a
+  // light rim on the sunny side, a darker edge and a heavier blue line on the
+  // other side. All of it is worked out per pixel, so the shapes stay smooth.
+  // ==================================================================
   const waterUniforms = {
     uTime: { value: 0 }, uClock: { value: 0 }, uAmp: { value: cur.amp }, uFoam: { value: cur.foam },
-    uRip: { value: ripples },
+    uRip: { value: ripples }, uBoat: { value: new THREE.Vector4(0, 0, 1, 0) },
     uDeep: { value: cur.deep.clone() }, uMid: { value: cur.mid.clone() }, uLight: { value: cur.light.clone() },
-    uLine: { value: cur.line.clone() }, uHaze: { value: cur.haze.clone() }, uSunDir: { value: SUN_DIR },
-    uDpr: { value: renderer.getPixelRatio() }, uFlash: { value: 0 },
+    uLine: { value: cur.line.clone() }, uHaze: { value: cur.haze.clone() },
+    uDpr: { value: pixelRatio }, uFlash: shared.uFlash,
   };
-  const segs = isSmall ? 150 : 200;
+  const segs = isSmall ? 130 : 180;
   const waterGeo = new THREE.PlaneGeometry(2, 2, segs, segs);
   waterGeo.rotateX(-Math.PI / 2);
   {
+    // denser grid near the middle so small ripples look smooth
     const p = waterGeo.attributes.position;
-    const remap = u => Math.sign(u) * (0.3 * Math.abs(u) + 0.7 * u * u) * 130;
+    const remap = u => Math.sign(u) * (0.3 * Math.abs(u) + 0.7 * u * u) * 140;
     for (let i = 0; i < p.count; i++) p.setXYZ(i, remap(p.getX(i)), 0, remap(p.getZ(i)));
   }
   const water = new THREE.Mesh(waterGeo, new THREE.ShaderMaterial({
     uniforms: waterUniforms,
     extensions: { derivatives: true },
     vertexShader: `
-      uniform float uTime, uClock, uAmp;
-      uniform vec4 uRip[${RIP.count}];
-      varying vec3 vN; varying vec3 vWorld; varying float vH; varying float vRip;
       ${glslWaves}
-      float total(vec2 p){ return waveH(p) + ripH(p); }
+      varying vec3 vWorld;
       void main(){
-        vec3 p = position;
-        vec2 xz = (modelMatrix * vec4(p, 1.0)).xz;
-        float w = waveH(xz), r = ripH(xz);
-        p.y += w + r;
-        float e = 0.15;
-        vN = normalize(vec3(total(xz - vec2(e,0.0)) - total(xz + vec2(e,0.0)), 2.0*e,
-                            total(xz - vec2(0.0,e)) - total(xz + vec2(0.0,e))));
-        vH = w; vRip = r;
-        vec4 wp = modelMatrix * vec4(p, 1.0);
+        vec4 wp = modelMatrix * vec4(position, 1.0);
+        wp.y += waveH(wp.xz) + ripH(wp.xz);
         vWorld = wp.xyz;
         gl_Position = projectionMatrix * viewMatrix * wp;
       }`,
     fragmentShader: `
-      uniform float uTime, uAmp, uFoam, uDpr, uFlash;
-      uniform vec3 uDeep, uMid, uLight, uLine, uHaze, uSunDir;
-      varying vec3 vN; varying vec3 vWorld; varying float vH; varying float vRip;
+      ${glslWaves}
+      ${glslNoise}
+      uniform float uFoam, uDpr, uFlash;
+      uniform vec3 uDeep, uMid, uLight, uLine, uHaze;
+      uniform vec4 uBoat;      // boat x, z, cos(turn), sin(turn)
+      varying vec3 vWorld;
 
-      float hash(vec2 p){ return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453); }
-      float vnoise(vec2 p){
-        vec2 i = floor(p), f = fract(p); vec2 u = f*f*(3.0-2.0*f);
-        return mix(mix(hash(i), hash(i+vec2(1.0,0.0)), u.x), mix(hash(i+vec2(0.0,1.0)), hash(i+vec2(1.0,1.0)), u.x), u.y);
+      // The blob pattern: smooth noise, bent so the shapes flow, drifting slowly
+      float blobs(vec2 p){
+        vec2 q = p * 0.085;
+        q += 0.45 * vec2(sin(q.y * 1.9 + uTime * 0.10), cos(q.x * 1.6 - uTime * 0.08));
+        return vnoise(q) * 0.72 + vnoise(q * 2.1 + 7.3) * 0.28;
       }
-      // A soft line where 'v' crosses 'b', about 2 screen pixels wide
-      float edge(float v, float b, float fw){ return 1.0 - smoothstep(0.7, 1.6, abs(v - b) / (fw * uDpr)); }
+      float lineFade;
+      // Fill a shape where v > 0 and draw an ink line of 'lw' pixels around it
+      void shape(inout vec3 col, float v, vec3 fill, float lw){
+        float fw = fwidth(v) + 1e-5;
+        col = mix(col, fill, smoothstep(-fw, fw, v));
+        float l = 1.0 - smoothstep(lw - 0.7, lw + 0.7, abs(v) / fw);
+        col = mix(col, uLine, l * lineFade);
+      }
 
       void main(){
-        vec3 n = normalize(vN);
+        vec2 p = vWorld.xz;
         float dist = length(cameraPosition - vWorld);
-        float l = dot(n, normalize(uSunDir));
-        float hn = vH / (uAmp * ${f(AMP_SUM)} + 0.001);   // -1 trough … 1 crest
+        lineFade = 1.0 - smoothstep(32.0, 90.0, dist);
+        float hn = waveH(p) / (uAmp * ${f(AMP_SUM)} + 0.001);   // -1 trough … 1 crest
+        float r = ripH(p);
 
-        // Blobby pattern: wave height + slowly drifting noise + ripples
-        vec2 q = vWorld.xz;
-        float n1 = vnoise(q * 0.09 + vec2(uTime * 0.02, -uTime * 0.015));
-        float n2 = vnoise(q * 0.27 + vec2(-uTime * 0.04, uTime * 0.03));
-        float field = hn * 0.55 + (n1 - 0.5) * 1.1 + (n2 - 0.5) * 0.45 + vRip * 0.9 + l * 0.15;
+        // --- gel blobs ---------------------------------------------------
+        float add = hn * 0.09 + r * 0.22;            // waves and ripples push the shapes around
+        vec2 L = vec2(-0.47, 0.19);                   // small step towards the light
+        float F  = blobs(p) + add;
+        float Fl = blobs(p + L) + add;                // same pattern, a step towards the light
+        float Fs = blobs(p - L) + add;                // and a step away from it
+        float fw = fwidth(F) + 1e-5;
+        float t1 = 0.53, t2 = 0.675;
+        float inMid  = smoothstep(-fw, fw, F - t1);
+        float inDeep = smoothstep(-fw, fw, F - t2);
+        vec3 col = mix(uLight, uMid, inMid);
+        col = mix(col, uDeep, inDeep);
+        vec3 shine = mix(uLight, vec3(1.0), 0.55);
+        float rim = inMid * (1.0 - smoothstep(-fw, fw, Fl - t1));      // light rim on the sunny side
+        float shadow = inMid * (1.0 - smoothstep(-fw, fw, Fs - t1));   // darker edge on the other side
+        col = mix(col, shine, rim * 0.85);
+        col = mix(col, uDeep, shadow * 0.55 * (1.0 - inDeep));
 
-        vec3 col = field < -0.28 ? uDeep : (field < 0.22 ? uMid : uLight);
+        // --- blue lines: heavy on the shadow side, thin and broken on the light side
+        float side = smoothstep(-0.015, 0.015, Fl - Fs);
+        float wob = vnoise(p * 0.3 + 3.1);
+        float lw = uDpr * (side * (0.9 + 2.0 * wob) + (1.0 - side) * 1.0 * smoothstep(0.45, 0.7, wob));
+        float px = abs(F - t1) / fw;
+        float line = (1.0 - smoothstep(lw - 0.7, lw + 0.7, px)) * step(0.3, lw);
+        float px2 = abs(F - t2) / fw;
+        line = max(line, (1.0 - smoothstep(uDpr * 0.9 - 0.7, uDpr * 0.9 + 0.7, px2)) * side * 0.8);
+        col = mix(col, uLine, line * lineFade * 0.92);
 
-        // Blue outlines around the patches
-        float fw = fwidth(field) + 1e-4;
-        float line = max(edge(field, -0.28, fw), edge(field, 0.22, fw));
+        // --- small dash marks scattered on the water -------------------------
+        vec2 g = p / 2.6; vec2 id = floor(g);
+        if (hash(id) > 0.62) {
+          vec2 c = (vec2(hash(id + 1.7), hash(id + 9.2)) - 0.5) * 0.5;
+          float a = (hash(id + 4.4) - 0.5) * 0.9;
+          vec2 d = fract(g) - 0.5 - c, dir = vec2(cos(a), sin(a));
+          float len = 0.05 + 0.10 * hash(id + 2.2);
+          float sd = length(d - dir * clamp(dot(d, dir), -len, len)) * 2.6;
+          float pxW = max(length(dFdx(p)), length(dFdy(p))) + 1e-5;
+          float dash = 1.0 - smoothstep(uDpr * 1.3 - 0.7, uDpr * 1.3 + 0.7, sd / pxW);
+          col = mix(col, uLine, dash * (1.0 - smoothstep(22.0, 60.0, dist)) * 0.9);
+        }
 
-        // Foam on the highest crests and on ripple rings, with its own outline
-        float foamV = max(hn - uFoam, vRip - 0.42);
-        float ffw = fwidth(foamV) + 1e-4;
-        if (foamV > 0.0) col = vec3(0.96, 1.0, 0.98);
-        line = max(line, edge(foamV, 0.0, ffw));
+        // --- foam: wave crests, ripple rings, and around the hull -------------
+        vec3 foam = vec3(0.97, 1.0, 0.99);
+        shape(col, hn - uFoam + (vnoise(p * 0.5) - 0.5) * 0.12, foam, uDpr * 1.5);
+        shape(col, r - 0.36, foam, uDpr * 1.5);
+        float ringPx = abs(abs(r) - 0.11) / (fwidth(r) + 1e-5);
+        col = mix(col, uLine, (1.0 - smoothstep(uDpr * 1.1 - 0.7, uDpr * 1.1 + 0.7, ringPx)) * lineFade * step(r, 0.3));
+        vec2 bl = p - uBoat.xy;
+        bl = vec2(bl.x * uBoat.z - bl.y * uBoat.w, bl.x * uBoat.w + bl.y * uBoat.z);
+        float ang = atan(bl.y, bl.x);
+        float hull = 1.62 + 0.13 * sin(ang * 6.0 + uTime * 2.2) + 0.07 * sin(ang * 11.0 - uTime * 3.1);
+        shape(col, hull - length(bl / vec2(1.14, 1.0)), foam, uDpr * 1.5);
 
-        line *= 1.0 - smoothstep(35.0, 80.0, dist);   // lines fade out in the distance
-        col = mix(col, uLine, line * 0.9);
-
+        // --- depth, grain, haze ------------------------------------------------
+        col = mix(col, uDeep, 0.2 * (1.0 - smoothstep(6.0, 34.0, dist)));          // deeper colour close to you
+        col -= (hash(gl_FragCoord.xy) - 0.5) * 0.035 * (0.6 + inMid + inDeep);      // print grain, stronger in the darks
         col += uFlash * vec3(0.2, 0.18, 0.3);
-        col = mix(col, uHaze, smoothstep(45.0, 125.0, dist));
+        col = mix(col, uHaze, smoothstep(48.0, 128.0, dist));                       // fade into the horizon
         gl_FragColor = vec4(col, 1.0);
       }`,
   }));
   scene.add(water);
 
-  // ------------------------------------------------------------------
-  // LIGHTS and flat "cel" shading for the boat, clouds and droplets
-  // ------------------------------------------------------------------
-  scene.add(new THREE.HemisphereLight(0xffffff, 0xf2c6d6, 0.55));
-  const sunLight = new THREE.DirectionalLight(0xffffff, 0.6);
-  sunLight.position.set(-30, 40, 30);
-  scene.add(sunLight);
-
-  // Two tones only, lit and shadow, like the comic's flat colouring
-  const gradientMap = new THREE.DataTexture(new Uint8Array([150, 255]), 2, 1, THREE.RedFormat);
-  gradientMap.minFilter = gradientMap.magFilter = THREE.NearestFilter;
-  gradientMap.needsUpdate = true;
-  const toon = (color, extra) => new THREE.MeshToonMaterial({ color, gradientMap, ...extra });
-
-  // Outline: a slightly larger inside-out copy of a shape, in the outline colour
-  const outlineMats = new Map();
-  function withOutline(mesh, thickness = 0.05, color = BOAT_INK) {
-    const key = color.getHexString();
-    if (!outlineMats.has(key)) outlineMats.set(key, new THREE.MeshBasicMaterial({ color, side: THREE.BackSide }));
-    mesh.geometry.computeBoundingBox();
-    const size = new THREE.Vector3(); mesh.geometry.boundingBox.getSize(size);
-    const o = new THREE.Mesh(mesh.geometry, outlineMats.get(key));
-    o.scale.set(1 + 2 * thickness / Math.max(size.x, 0.01), 1 + 2 * thickness / Math.max(size.y, 0.01), 1 + 2 * thickness / Math.max(size.z, 0.01));
-    mesh.add(o);
-    return mesh;
-  }
-
-  // ------------------------------------------------------------------
-  // STAND-IN BOAT, built from simple shapes after Germán's drawing:
-  // round bowl hull, plank deck, thick mast on a domed base with a little door,
-  // boom and sail, tall rudder board with a porthole, a log at the bow, ribbon flag.
-  // Germán's Blender model replaces this whole group in step 3. Bow points along +x.
-  // ------------------------------------------------------------------
-  const WOOD = '#dca57a', WOOD_DARK = '#b97f5a', DECK = '#efc596', SAIL = '#f6eadf', GLASS = '#5b3aa0', FLAG = '#c39be6';
+  // ==================================================================
+  // THE BOAT, built from simple shapes after Germán's concept drawing:
+  // a bowl hull with a thick rim, plank deck with a hatch, a domed mast base
+  // with a little door, thick hollow mast, boom and pillow sail, the tall stern
+  // board with a porthole, a log at the bow, a side shelf with a mooring ring,
+  // and the ribbon flag. Germán's Blender model replaces this whole group later.
+  // The bow points along +x.
+  // ==================================================================
+  const WOOD = '#dba676', WOOD_DARK = '#bd845c', WOOD_LIGHT = '#eec497', DECK = '#efcf9f', SAIL = '#f3f1f8', GLASS = '#5b3aa0', FLAG = '#c9a2ea';
   const boat = new THREE.Group();
-  const boatBody = new THREE.Group(); // the part that rocks on the waves
+  const boatBody = new THREE.Group();   // the part that rocks on the waves
   boat.add(boatBody);
 
-  // Add a part: centre its shape, colour it, place it, give it an outline
-  function part(geo, color, x, y, z, thickness = 0.04, matExtra) {
-    geo.center();
-    const m = withOutline(new THREE.Mesh(geo, toon(color, matExtra)), thickness);
-    m.position.set(x, y, z);
-    boatBody.add(m);
+  function part(geo, mat, opts = {}) {
+    const m = new THREE.Mesh(geo, typeof mat === 'string' ? toon(mat) : mat);
+    if (opts.pos) m.position.set(...opts.pos);
+    if (opts.rot) m.rotation.set(...opts.rot);
+    if (opts.outline !== 0) withOutline(m, opts.outline || 2.2);
+    (opts.parent || boatBody).add(m);
     return m;
   }
-  const HULL_X = 1.3; // the bowl is stretched a little front-to-back
+  // Round shapes become slightly squared-off and longer, like the concept's hull
+  const HULL_LEN = 1.12;
+  function squircle(geo) {
+    const p = geo.attributes.position, n = 3.2;
+    for (let i = 0; i < p.count; i++) {
+      const x = p.getX(i), z = p.getZ(i), r = Math.hypot(x, z); if (r < 1e-4) continue;
+      const c = Math.abs(x / r), s = Math.abs(z / r);
+      const k = 1 / Math.pow(Math.pow(c, n) + Math.pow(s, n), 1 / n);
+      p.setX(i, x * k * HULL_LEN); p.setZ(i, z * k);
+    }
+    geo.computeVertexNormals();
+    return geo;
+  }
+  const V2 = (x, y) => new THREE.Vector2(x, y);
 
-  // Bowl hull (bottom half of a sphere)
-  const hullGeo = new THREE.SphereGeometry(1.4, 32, 16, 0, Math.PI * 2, Math.PI / 2, Math.PI / 2);
-  hullGeo.scale(HULL_X, 0.9, 1);
-  part(hullGeo, WOOD, 0, -0.63, 0, 0.05);
+  // Bowl hull
+  const hullPts = [];
+  for (let i = 0; i <= 14; i++) { const a = i / 14 * Math.PI / 2; hullPts.push(V2(Math.max(1.47 * Math.pow(Math.sin(a), 0.9), 0.001), -1.25 * Math.cos(a))); }
+  part(squircle(new THREE.LatheGeometry(hullPts, 48)), toon(WOOD, { map: hullTex, side: THREE.DoubleSide }), { outline: 2.6 });
+  // Thick rim
+  const rimPts = [V2(1.44, -0.17), V2(1.54, -0.17), V2(1.63, -0.09), V2(1.63, 0.17), V2(1.57, 0.24), V2(1.38, 0.24), V2(1.33, 0.18), V2(1.33, 0.0)];
+  part(squircle(new THREE.LatheGeometry(rimPts, 48)), toon(WOOD_DARK, { map: woodTex, repeat: [10, 1], side: THREE.DoubleSide }), { outline: 2.4 });
+  // Plank deck
+  part(squircle(new THREE.CircleGeometry(1.34, 48).rotateX(-Math.PI / 2)), toon(DECK, { map: deckTex, cut: -1 }), { pos: [0, 0.02, 0], outline: 0 });
 
-  // Deck and the thick rim around it
-  part(new THREE.CylinderGeometry(1.36, 1.36, 0.06, 40).scale(HULL_X, 1, 1), DECK, 0, -0.02, 0, 0.01);
-  const rimGeo = new THREE.TorusGeometry(1.36, 0.13, 10, 48);
-  rimGeo.rotateX(Math.PI / 2); rimGeo.scale(HULL_X, 1, 1);
-  part(rimGeo, WOOD_DARK, 0, 0.05, 0, 0.03);
-  // Plank lines on the deck
-  const plankMat = new THREE.MeshBasicMaterial({ color: '#c99468' });
-  for (const z of [-0.9, -0.45, 0, 0.45, 0.9]) {
-    const len = 2 * HULL_X * 1.3 * Math.sqrt(1 - (z / 1.36) ** 2);
-    const p = new THREE.Mesh(new THREE.BoxGeometry(len, 0.02, 0.03), plankMat);
-    p.position.set(0, 0.02, z);
-    boatBody.add(p);
+  // Domed mast base with its little door
+  const domePts = [V2(0.64, 0), V2(0.62, 0.14), V2(0.55, 0.38), V2(0.46, 0.6), V2(0.38, 0.78), V2(0.31, 0.9), V2(0.25, 0.96)];
+  part(new THREE.LatheGeometry(domePts, 28), toon(WOOD, { map: woodTex, repeat: [4, 1], side: THREE.DoubleSide }), { pos: [0, 0.02, 0] });
+  {
+    const a = 0.6, dir = [Math.cos(a), Math.sin(a)];               // which way the door faces
+    const door = new THREE.Shape();
+    door.moveTo(-0.14, 0); door.lineTo(0.14, 0); door.lineTo(0.14, 0.26); door.absarc(0, 0.26, 0.14, 0, Math.PI, false); door.lineTo(-0.14, 0);
+    const g = new THREE.Group();
+    g.position.set(dir[0] * 0.6, 0.04, dir[1] * 0.6);
+    g.rotation.set(-0.24, Math.atan2(dir[0], dir[1]), 0, 'YXZ');
+    boatBody.add(g);
+    part(new THREE.ExtrudeGeometry(door, { depth: 0.08, bevelEnabled: false }), WOOD_DARK, { parent: g, outline: 1.8 });
+    part(new THREE.BoxGeometry(0.1, 0.035, 0.05), WOOD_LIGHT, { parent: g, pos: [0.02, 0.2, 0.1], outline: 1.4 });
   }
 
-  // Domed mast base with a little door
-  const baseGeo = new THREE.SphereGeometry(0.55, 24, 12, 0, Math.PI * 2, 0, Math.PI / 2);
-  baseGeo.scale(1, 1.35, 0.95);
-  part(baseGeo, WOOD, 0.1, 0.38, 0, 0.035);
-  part(new THREE.BoxGeometry(0.05, 0.36, 0.24), WOOD_DARK, 0.6, 0.24, 0, 0.02);
+  // Mast (hollow at the top), thin pole, boom
+  part(new THREE.CylinderGeometry(0.2, 0.235, 3.2, 20), toon(WOOD, { map: woodVTex, repeat: [3, 3] }), { pos: [0, 2.45, 0] });
+  part(new THREE.CircleGeometry(0.13, 20).rotateX(-Math.PI / 2), new THREE.MeshBasicMaterial({ color: BOAT_INK }), { pos: [0, 4.056, 0], outline: 0 });
+  part(new THREE.CylinderGeometry(0.035, 0.035, 0.9, 8), WOOD_DARK, { pos: [0, 4.4, 0], outline: 1.6 });
+  part(new THREE.CylinderGeometry(0.19, 0.19, 1.9, 18).rotateZ(Math.PI / 2), toon(WOOD_LIGHT, { map: woodTex, repeat: [3, 3] }), { pos: [-1.1, 2.3, 0.04] });
+  // Pillow sail sitting on the boom
+  {
+    const s = new THREE.Shape();
+    s.moveTo(-0.3, 2.5); s.lineTo(-0.3, 3.55); s.quadraticCurveTo(-0.3, 3.8, -0.55, 3.72);
+    s.lineTo(-1.85, 3.0); s.quadraticCurveTo(-2.02, 2.9, -2.02, 2.72); s.lineTo(-2.02, 2.5); s.lineTo(-0.3, 2.5);
+    const geo = new THREE.ExtrudeGeometry(s, { depth: 0.14, bevelEnabled: true, bevelThickness: 0.06, bevelSize: 0.06, bevelSegments: 3, curveSegments: 8 });
+    geo.translate(0, 0, -0.07 + 0.04);
+    part(geo, toon(SAIL, { shade: '#dcd6f0', cut: -0.45, map: woodTex, repeat: [0.6, 0.6] }));
+  }
 
-  // Mast, thin pole on top, boom and sail
-  part(new THREE.CylinderGeometry(0.2, 0.22, 3.4, 16), WOOD, 0.1, 1.75, 0, 0.035);
-  part(new THREE.CylinderGeometry(0.04, 0.04, 0.7, 8), WOOD_DARK, 0.1, 3.8, 0, 0.02);
-  part(new THREE.CylinderGeometry(0.17, 0.17, 1.9, 14).rotateZ(Math.PI / 2), WOOD, -0.9, 2.3, 0.05, 0.035);
-  const sailShape = new THREE.Shape();
-  sailShape.moveTo(0, 0); sailShape.lineTo(0, 1.35); sailShape.lineTo(-0.3, 1.38);
-  sailShape.lineTo(-1.75, 0.25); sailShape.lineTo(-1.75, 0); sailShape.lineTo(0, 0);
-  const sailGeo = new THREE.ExtrudeGeometry(sailShape, { depth: 0.08, bevelEnabled: true, bevelThickness: 0.03, bevelSize: 0.03, bevelSegments: 2 });
-  part(sailGeo, SAIL, -0.95, 3.1, -0.05, 0.03);
+  // Tall stern board with a porthole
+  {
+    const s = new THREE.Shape();
+    s.moveTo(-2.32, -2.0); s.lineTo(-1.74, -2.0); s.lineTo(-1.74, 0.6); s.lineTo(-1.6, 0.6); s.lineTo(-1.6, 2.75);
+    s.absarc(-1.96, 2.75, 0.36, 0, Math.PI, false); s.lineTo(-2.32, -2.0);
+    const geo = new THREE.ExtrudeGeometry(s, { depth: 0.14, bevelEnabled: true, bevelThickness: 0.025, bevelSize: 0.025, bevelSegments: 2, curveSegments: 10 });
+    geo.translate(0, 0, -0.07);
+    part(geo, toon(WOOD, { map: woodVTex, repeat: [1.2, 0.6] }));
+    part(new THREE.TorusGeometry(0.2, 0.055, 10, 24), WOOD_LIGHT, { pos: [-1.96, 2.62, 0], outline: 1.6 });
+    part(new THREE.CylinderGeometry(0.17, 0.17, 0.22, 20).rotateX(Math.PI / 2), new THREE.MeshBasicMaterial({ color: GLASS }), { pos: [-1.96, 2.62, 0], outline: 0 });
+  }
 
-  // Tall rudder board at the stern, rounded top, with a porthole
-  const boardShape = new THREE.Shape();
-  boardShape.moveTo(-0.36, 0); boardShape.lineTo(0.36, 0); boardShape.lineTo(0.36, 3.25);
-  boardShape.absarc(0, 3.25, 0.36, 0, Math.PI, false); boardShape.lineTo(-0.36, 0);
-  const boardGeo = new THREE.ExtrudeGeometry(boardShape, { depth: 0.16, bevelEnabled: true, bevelThickness: 0.03, bevelSize: 0.03, bevelSegments: 2 });
-  part(boardGeo, WOOD, -2.15, 0.8, 0, 0.035);
-  part(new THREE.CylinderGeometry(0.21, 0.21, 0.26, 20).rotateX(Math.PI / 2), WOOD_DARK, -2.15, 2.25, 0, 0.02);
-  part(new THREE.CylinderGeometry(0.12, 0.12, 0.28, 16).rotateX(Math.PI / 2), GLASS, -2.15, 2.25, 0, 0.005);
+  // Log at the bow, held by a collar
+  part(new THREE.CylinderGeometry(0.24, 0.24, 1.45, 18).rotateZ(Math.PI / 2), toon(WOOD_LIGHT, { map: woodTex, repeat: [3, 2] }), { pos: [2.1, 0.3, 0] });
+  part(new THREE.CylinderGeometry(0.32, 0.32, 0.34, 18).rotateZ(Math.PI / 2), WOOD_DARK, { pos: [1.72, 0.3, 0] });
+  part(new THREE.TorusGeometry(0.13, 0.02, 6, 20).rotateY(Math.PI / 2), new THREE.MeshBasicMaterial({ color: BOAT_INK }), { pos: [2.83, 0.3, 0], outline: 0 });
 
-  // Log sticking out of the bow, and rope rings on the sides
-  part(new THREE.CylinderGeometry(0.24, 0.24, 1.3, 16).rotateZ(Math.PI / 2), WOOD, 1.95, 0.02, 0, 0.035);
-  for (const zs of [1, -1]) part(new THREE.TorusGeometry(0.16, 0.05, 8, 18), WOOD_DARK, -1.15, 0.28, zs * 1.03, 0.015);
+  // Side shelf with a mooring ring
+  part(new THREE.BoxGeometry(0.72, 0.13, 0.46), WOOD_LIGHT, { pos: [-0.5, 0.2, 1.72] });
+  part(new THREE.TorusGeometry(0.2, 0.055, 8, 16, Math.PI), WOOD_DARK, { pos: [-0.5, 0.26, 1.78], outline: 1.8 });
 
-  // Ribbon flag on top, pointing forward
-  const flag = new THREE.Mesh(new THREE.PlaneGeometry(1.3, 0.28, 14, 1), toon(FLAG, { side: THREE.DoubleSide }));
-  flag.geometry.translate(0.65, 0, 0);
-  flag.position.set(0.1, 3.95, 0);
-  boatBody.add(flag);
+  // Ribbon flag, flying towards the bow
+  const flag = part(new THREE.BoxGeometry(1.5, 0.3, 0.035, 18, 1, 1).translate(0.75, 0, 0), toon(FLAG, { shade: '#a98ad6' }), { pos: [0.03, 4.62, 0], outline: 1.8 });
   const flagBase = flag.geometry.attributes.position.array.slice();
 
   scene.add(boat);
 
-  // ------------------------------------------------------------------
-  // CLOUDS: lilac blobs with purple outlines, drifting around the horizon
-  // ------------------------------------------------------------------
-  const cloudMat = toon(cur.cloud.clone());
+  // ==================================================================
+  // CLOUDS and the SUN with its little face (page 2 of the comic)
+  // ==================================================================
+  const cloudMat = toon(cur.cloud.clone(), { cut: 0.25 });
   const clouds = [];
   const puffGeo = new THREE.SphereGeometry(1, 18, 12);
-  for (let i = 0; i < 8; i++) {
+  for (let i = 0; i < 9; i++) {
     const c = new THREE.Group();
     const n = 3 + (i % 3);
     for (let j = 0; j < n; j++) {
-      const p = withOutline(new THREE.Mesh(puffGeo, cloudMat), 0.14, CLOUD_INK);
-      const s = 3 + Math.random() * 3.5;
-      p.scale.set(s * 1.3, s * 0.55, s);
-      p.position.set((j - n / 2) * 4, Math.random() * 1.2, Math.random() * 2);
+      const p = withOutline(new THREE.Mesh(puffGeo, cloudMat), 2, CLOUD_INK);
+      const s = 3 + rnd() * 3.5;
+      p.scale.set(s * 1.5, s * 0.5, s);
+      p.position.set((j - n / 2) * 4.4, rnd() * 1.2, rnd() * 2);
       c.add(p);
     }
-    const ang = (i / 8) * Math.PI * 2 + Math.random() * 0.4;
-    const rad = 120 + Math.random() * 40;
-    c.position.set(Math.cos(ang) * rad, 16 + Math.random() * 20, Math.sin(ang) * rad);
-    c.userData = { ang, rad, speed: 0.004 + Math.random() * 0.004 };
+    const ang = (i / 9) * Math.PI * 2 + rnd() * 0.4, rad = 120 + rnd() * 40;
+    c.userData = { ang, rad, speed: 0.004 + rnd() * 0.004, y: 13 + rnd() * 26 };
     scene.add(c); clouds.push(c);
   }
 
-  // ------------------------------------------------------------------
-  // THE SEA'S LIMITS AND THE ISLAND
-  // A small round sea: a soft current turns the boat back at the edge.
-  // The island is a rough placeholder for Germán's painted island city.
-  // ------------------------------------------------------------------
-  const SEA_R = 72;                                 // how far from the middle you can sail
-  const ISLAND = new THREE.Vector2(-48, -38);       // straight ahead from the starting view
-  const ISLAND_R = 11;                              // the boat can't sail closer than this
-  const ARRIVE_R = 16;                              // getting this close counts as arriving
-  const ISLE_INK = new THREE.Color('#7a4a9a');
-  const island = new THREE.Group();
+  const sunCanvas = document.createElement('canvas'); sunCanvas.width = sunCanvas.height = 256;
   {
-    const add = (geo, color, x, y, z, th = 0.12) => {
-      const m = withOutline(new THREE.Mesh(geo, toon(color)), th, ISLE_INK);
-      m.position.set(x, y, z); island.add(m); return m;
-    };
-    add(new THREE.CylinderGeometry(12.5, 13.5, 1.2, 40), '#f1e2bd', 0, -0.2, 0);          // sandy shore
-    add(new THREE.SphereGeometry(10, 32, 16).scale(1, 0.55, 0.9), '#a9b98a', 0, 0.2, 0);  // green hill
-    const towers = [
-      [0, 0, 2.6, 16, 2.6, '#e6a3d6'], [-2.8, 1.2, 2.2, 11, 2.0, '#c9a7ea'], [2.8, -0.6, 2.0, 12, 2.2, '#f0bfe0'],
-      [-5.5, -2, 2.4, 6.5, 2.0, '#efc6e4'], [5.2, 2.2, 2.0, 6, 1.8, '#d5b3ee'], [-1.5, 4.8, 1.8, 6.5, 1.8, '#e9b4dc'],
-      [3.5, 5.5, 1.6, 4.5, 1.6, '#f3cfe6'], [-6.8, 3.2, 1.8, 4, 1.6, '#cdb0ea'], [7.2, -2.8, 1.6, 4.2, 1.8, '#ebb6dc'],
-      [1.0, -5.8, 2.0, 5, 1.8, '#d9b9ef'], [-4.0, -5.5, 1.6, 4, 1.4, '#f2c9e3'],
-    ];
-    for (const [x, z, w, h, d, c] of towers) add(new THREE.BoxGeometry(w, h, d), c, x, 2.5 + h / 2 - 1.5, z, 0.1);
-    // a little star on top of the tallest tower, like page 2
-    add(new THREE.OctahedronGeometry(0.7), '#f9c25e', 0, 18.2, 0, 0.08);
+    const g = sunCanvas.getContext('2d'); g.lineCap = 'round';
+    g.strokeStyle = '#7a4a33'; g.lineWidth = 5;
+    for (let i = 0; i < 12; i++) { const a = i / 12 * Math.PI * 2; g.beginPath(); g.moveTo(128 + Math.cos(a) * 104, 128 + Math.sin(a) * 104); g.lineTo(128 + Math.cos(a) * 118, 128 + Math.sin(a) * 118); g.stroke(); }
+    g.fillStyle = '#f9c25e'; g.beginPath(); g.arc(128, 128, 88, 0, Math.PI * 2); g.fill(); g.stroke();
+    g.fillStyle = '#fbd58a'; g.beginPath(); g.arc(112, 108, 58, 0, Math.PI * 2); g.fill();
+    g.beginPath(); g.arc(100, 122, 9, Math.PI * 1.1, Math.PI * 1.9); g.stroke();   // closed happy eyes
+    g.beginPath(); g.arc(156, 122, 9, Math.PI * 1.1, Math.PI * 1.9); g.stroke();
+    g.beginPath(); g.arc(128, 134, 12, Math.PI * 0.15, Math.PI * 0.85); g.stroke(); // smile
   }
-  island.position.set(ISLAND.x, 0, ISLAND.y);
-  island.rotation.y = 0.6;
-  scene.add(island);
+  const sunMat = new THREE.MeshBasicMaterial({ map: new THREE.CanvasTexture(sunCanvas), transparent: true, depthWrite: false });
+  const sun = new THREE.Mesh(new THREE.PlaneGeometry(46, 46), sunMat);
+  sun.renderOrder = -1;
+  scene.add(sun);
 
-  // ------------------------------------------------------------------
-  // FLOATING FISH to collect. Each opens a round inset panel (Germán's art later).
-  // ------------------------------------------------------------------
-  const REWARDS = [
-    ['A fish!', 'A first sketch of Skit goes here.'],
-    ['Another fish!', 'A panel from the swirl scene goes here.'],
-    ['Fish number three!', 'Behind the scenes: the boat in Blender.'],
-    ['Four fish!', 'An early colour test goes here.'],
-    ['Five fish!', 'A sketch of Dji goes here.'],
-    ['All the fish!', 'A secret page goes here.'],
-  ];
-  const FISH_INK = new THREE.Color('#3a4fc4');
-  const fishBodyGeo = new THREE.SphereGeometry(1, 16, 10).scale(0.6, 0.32, 0.26);
-  const fishTailGeo = new THREE.ConeGeometry(0.28, 0.4, 3).rotateZ(Math.PI / 2);
-  const fishMat = toon('#8fb3f5');
+  // ==================================================================
+  // FISH to catch, and the water drops that jump up where you tap
+  // ==================================================================
+  const REWARDS = ['A first sketch of Skit goes here.', 'A panel from the comic goes here.', 'The boat in Blender goes here.',
+                   'An early colour test goes here.', 'A sketch of Dji goes here.', 'A secret page goes here.'];
+  const fishMat = toon('#8fb3f5', { shade: '#6f8fe0' });
+  const fishBodyGeo = new THREE.SphereGeometry(1, 16, 10).scale(0.62, 0.34, 0.27);
+  const fishTailGeo = new THREE.ConeGeometry(0.3, 0.42, 3).rotateZ(Math.PI / 2).scale(1, 1, 0.5);
   const fishes = [];
-  function placeFish() {
-    let tries = 0;
-    for (const f of fishes) {
-      do {
-        const a = Math.random() * Math.PI * 2, r = 8 + Math.random() * (SEA_R - 14);
-        f.userData.home = new THREE.Vector2(Math.cos(a) * r, Math.sin(a) * r);
-      } while ((f.userData.home.distanceTo(ISLAND) < ARRIVE_R + 3 || fishes.some(o => o !== f && o.userData.home && o.visible && o.userData.home.distanceTo(f.userData.home) < 7)) && ++tries < 400);
-      f.visible = true;
-    }
-  }
-  for (let i = 0; i < REWARDS.length; i++) {
+  for (let i = 0; i < 5; i++) {
     const g = new THREE.Group();
-    g.add(withOutline(new THREE.Mesh(fishBodyGeo, fishMat), 0.06, FISH_INK));
-    const tail = withOutline(new THREE.Mesh(fishTailGeo, fishMat), 0.04, FISH_INK);
-    tail.position.x = -0.72; g.add(tail);
-    const eye = new THREE.Mesh(new THREE.SphereGeometry(0.07, 8, 6), new THREE.MeshBasicMaterial({ color: '#1c1b2b' }));
-    eye.position.set(0.35, 0.08, 0.2); g.add(eye);
+    g.add(withOutline(new THREE.Mesh(fishBodyGeo, fishMat), 2, WATER_INK));
+    const tail = withOutline(new THREE.Mesh(fishTailGeo, fishMat), 2, WATER_INK); tail.position.x = -0.74; g.add(tail);
+    for (const zs of [1, -1]) { const eye = new THREE.Mesh(new THREE.SphereGeometry(0.06, 8, 6), new THREE.MeshBasicMaterial({ color: '#1d1626' })); eye.position.set(0.36, 0.08, 0.2 * zs); g.add(eye); }
     g.scale.setScalar(1.6);
-    g.userData.phase = Math.random() * 6;
+    g.userData = { phase: Math.random() * 6, home: new THREE.Vector2() };
     scene.add(g); fishes.push(g);
   }
-  placeFish();
+  // Put a fish somewhere new: anywhere near the boat at the start, later ahead of where the boat is going
+  function placeFish(fsh, first) {
+    for (let tries = 0; tries < 30; tries++) {
+      const heading = boatVel.length() > 0.5 ? Math.atan2(boatVel.y, boatVel.x) : Math.random() * 6.283;
+      const a = first ? Math.random() * 6.283 : heading + (Math.random() - 0.5) * 2.6;
+      const r = first ? 9 + Math.random() * 26 : 26 + Math.random() * 18;
+      fsh.userData.home.set(boatPos.x + Math.cos(a) * r, boatPos.y + Math.sin(a) * r);
+      if (!fishes.some(o => o !== fsh && o.userData.home.distanceTo(fsh.userData.home) < 8)) break;
+    }
+  }
 
-  // ------------------------------------------------------------------
-  // SPLASH DROPLETS: little water blobs that jump up where you tap
-  // ------------------------------------------------------------------
-  const dropMat = toon('#c9f3e2');
+  const dropMat = toon('#d9f7ee', { shade: '#a9e3dc' });
   const dropGeo = new THREE.SphereGeometry(1, 12, 8);
   const drops = Array.from({ length: 36 }, () => {
-    const m = withOutline(new THREE.Mesh(dropGeo, dropMat), 0.3, new THREE.Color('#3a4fc4'));
+    const m = withOutline(new THREE.Mesh(dropGeo, dropMat), 1.8, WATER_INK);
     m.visible = false; m.userData.v = new THREE.Vector3();
     scene.add(m); return m;
   });
   let nextDrop = 0;
-  function splash(x, y, z) {
-    for (let i = 0; i < 7; i++) {
+  function splash(x, y, z, n = 7) {
+    for (let i = 0; i < n; i++) {
       const d = drops[nextDrop++ % drops.length];
-      const a = Math.random() * Math.PI * 2, sp = 1 + Math.random() * 2.2;
-      const s = 0.1 + Math.random() * 0.14;
-      d.scale.set(s, s * 1.4, s);
+      const a = Math.random() * Math.PI * 2, sp = 1 + Math.random() * 2.2, s = 0.09 + Math.random() * 0.13;
+      d.scale.set(s, s * 1.5, s);
       d.position.set(x, y + 0.2, z);
       d.userData.v.set(Math.cos(a) * sp, 4 + Math.random() * 3, Math.sin(a) * sp);
       d.visible = true;
     }
   }
 
-  // ------------------------------------------------------------------
-  // INPUT: tap the water to make a ripple; drag to orbit; pinch/scroll to zoom
-  // ------------------------------------------------------------------
-  const view = { az: 0.95, el: 0.3, radius: 16, targetRadius: 16 };
+  // ==================================================================
+  // SOUND (off until the visitor turns it on): small synthesised plops
+  // ==================================================================
+  let actx = null, soundOn = false;
+  function tone(freq, endFreq, dur, vol, type = 'sine', delay = 0) {
+    if (!soundOn || !actx) return;
+    const t = actx.currentTime + delay, o = actx.createOscillator(), g = actx.createGain();
+    o.type = type; o.frequency.setValueAtTime(freq, t); o.frequency.exponentialRampToValueAtTime(endFreq, t + dur);
+    g.gain.setValueAtTime(vol, t); g.gain.exponentialRampToValueAtTime(0.001, t + dur);
+    o.connect(g).connect(actx.destination); o.start(t); o.stop(t + dur + 0.02);
+  }
+  const plop = () => tone(420 + Math.random() * 160, 120, 0.18, 0.22);
+  const chime = () => { tone(660, 660, 0.14, 0.15, 'triangle'); tone(990, 990, 0.22, 0.15, 'triangle', 0.1); };
+
+  // ==================================================================
+  // INTERFACE: buttons, speech bubble, counter, inset panel
+  // ==================================================================
+  const ICONS = {
+    calm: '<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="4.2"/><path d="M12 2.5v2.5M12 19v2.5M2.5 12H5M19 12h2.5M5.3 5.3l1.8 1.8M16.9 16.9l1.8 1.8M5.3 18.7l1.8-1.8M16.9 7.1l1.8-1.8"/></svg>',
+    wind: '<svg viewBox="0 0 24 24"><path d="M3 9h11a3 3 0 1 0-3-3M3 14h15a3 3 0 1 1-3 3M3 19h6"/></svg>',
+    storm: '<svg viewBox="0 0 24 24"><path d="M13.5 2 5 13.5h5.5L9.5 22 19 9.5h-6z"/></svg>',
+    soundOn: '<svg viewBox="0 0 24 24"><path d="M4 9.5v5h3.5L12 18.5v-13L7.5 9.5zM15.5 9a4.5 4.5 0 0 1 0 6M18 6.5a8 8 0 0 1 0 11"/></svg>',
+    soundOff: '<svg viewBox="0 0 24 24"><path d="M4 9.5v5h3.5L12 18.5v-13L7.5 9.5zM16 9.5l5 5M21 9.5l-5 5"/></svg>',
+  };
+  const $ = id => document.getElementById(id);
+  const weatherBtn = $('weather'), soundBtn = $('sound'), bubble = $('bubble'), hint = $('hint');
+  weatherBtn.innerHTML = ICONS.calm; soundBtn.innerHTML = ICONS.soundOff;
+
+  const game = { taps: 0, fish: 0, paused: false, closeSaidAt: -99, lastTapAt: 0, idleSaid: false };
+  let elapsed = 0, waveTime = 0;
+  let bubbleUntil = 0, bubblePriority = 0;
+  function say(who, text, seconds = 4, priority = 1) {
+    if (priority < bubblePriority && elapsed < bubbleUntil) return;
+    bubble.innerHTML = `<b>${who}:</b> ${text}`;
+    bubble.classList.remove('off');
+    bubbleUntil = elapsed + seconds; bubblePriority = priority;
+  }
+
+  weatherBtn.addEventListener('click', () => {
+    weatherIdx = (weatherIdx + 1) % ORDER.length;
+    const name = ORDER[weatherIdx];
+    target = STATES[name];
+    weatherBtn.innerHTML = ICONS[name];
+    weatherBtn.setAttribute('aria-label', `Weather: ${name}. Tap to change.`);
+    say(...{ calm: ['Dji', 'Ahh. Much better.'], wind: ['Dji', 'The wind is picking up!'], storm: ['Skit', 'I think I\'m going to be sick...'] }[name], 3.5, 2);
+  });
+  soundBtn.addEventListener('click', () => {
+    soundOn = !soundOn;
+    if (soundOn && !actx) { try { actx = new (window.AudioContext || window.webkitAudioContext)(); } catch (e) { soundOn = false; } }
+    if (soundOn && actx.state === 'suspended') actx.resume();
+    soundBtn.innerHTML = soundOn ? ICONS.soundOn : ICONS.soundOff;
+    soundBtn.setAttribute('aria-label', soundOn ? 'Sound is on. Tap to turn off.' : 'Sound is off. Tap to turn on.');
+    plop();
+  });
+  $('about-open').addEventListener('click', () => { $('about').hidden = false; game.paused = true; $('about-close').focus(); });
+  $('about-close').addEventListener('click', () => { $('about').hidden = true; game.paused = false; });
+  setTimeout(() => $('caption').classList.add('short'), 9000);   // the story line tucks away after a moment
+
+  let insetTimer = 0;
+  function caughtFish(x, y, z) {
+    game.fish++;
+    $('count-n').textContent = game.fish;
+    const c = $('count'); c.classList.remove('bump'); void c.offsetWidth; c.classList.add('bump');
+    splash(x, y, z, 9); chime();
+    $('inset-tag').textContent = 'Fish ' + game.fish;
+    $('inset-text').textContent = REWARDS[(game.fish - 1) % REWARDS.length];
+    $('inset').classList.remove('off');
+    clearTimeout(insetTimer); insetTimer = setTimeout(() => $('inset').classList.add('off'), 3600);
+    const lines = [['Skit', 'Fish! Mine!'], ['Dji', 'Nice catch!'], ['Skit', 'More. I need more.'], ['Dji', 'That one looked surprised.']];
+    if (game.fish === 1 || Math.random() < 0.5) say(...lines[game.fish === 1 ? 0 : 1 + Math.floor(Math.random() * 3)], 3, 2);
+  }
+
+  // ==================================================================
+  // INPUT: tap the water to make a ripple; drag to look around; pinch or scroll to zoom
+  // ==================================================================
+  const view = { az: 0.95, el: 0.26, radius: 17, targetRadius: 17 };
   const pointers = new Map();
-  let pinchStart = 0, radiusAtPinch = 16, down = null;
+  let pinchStart = 0, radiusAtPinch = 17, down = null;
   const raycaster = new THREE.Raycaster();
   const seaPlane = new THREE.Plane(new THREE.Vector3(0, 1, 0), 0);
-  const pendingPush = []; // ripples that haven't reached the boat yet
-  let elapsed = 0, waveTime = 0;
+  const pendingPush = [];   // ripples that haven't reached the boat yet
+  const boatState = { y: 0, pitch: 0, roll: 0, yaw: 0.5 };
+  const boatPos = new THREE.Vector2(0, 0), boatVel = new THREE.Vector2(0, 0);
 
   function tapAt(clientX, clientY) {
     if (game.paused) return;
     const rect = canvas.getBoundingClientRect();
-    const ndc = new THREE.Vector2(((clientX - rect.left) / rect.width) * 2 - 1, -((clientY - rect.top) / rect.height) * 2 + 1);
-    raycaster.setFromCamera(ndc, camera);
+    raycaster.setFromCamera(new THREE.Vector2(((clientX - rect.left) / rect.width) * 2 - 1, -((clientY - rect.top) / rect.height) * 2 + 1), camera);
     const hit = new THREE.Vector3();
-    if (!raycaster.ray.intersectPlane(seaPlane, hit)) return;
-    if (hit.distanceTo(camera.position) > 70) return;
-    ripples[nextRipple % RIP.count].set(hit.x, hit.z, elapsed, RIP.strength);
-    nextRipple++;
+    if (!raycaster.ray.intersectPlane(seaPlane, hit) || hit.distanceTo(camera.position) > 90) return;
+    ripples[nextRipple++ % RIP.count].set(hit.x, hit.z, elapsed, RIP.strength);
     pendingPush.push({ x: hit.x, z: hit.z, t: elapsed });
     splash(hit.x, waveHeight(hit.x, hit.z, waveTime, cur.amp), hit.z);
-    game.taps++;
-    const dBoat = Math.hypot(hit.x - boatPos.x, hit.z - boatPos.y);
-    if (dBoat < 2.5 && elapsed - game.closeSaidAt > 6) { game.closeSaidAt = elapsed; say('Skit', 'Whoa! Not so close!', 2.5, 2); }
-    else if (game.taps === 3 && !game.saidIsland) { game.saidIsland = true; say('Dji', 'Look, the island on the horizon! Let\'s get there.', 5, 2); }
+    plop();
+    game.taps++; game.lastTapAt = elapsed;
+    if (game.taps === 3) hint.classList.add('off');
+    if (Math.hypot(hit.x - boatPos.x, hit.z - boatPos.y) < 2.6 && elapsed - game.closeSaidAt > 6) { game.closeSaidAt = elapsed; say('Skit', 'Whoa! Not so close!', 2.5, 2); }
+    else if (game.taps === 4) say('Dji', 'That\'s it! Now let\'s find some fish.', 4, 2);
   }
 
   canvas.addEventListener('pointerdown', e => {
-    canvas.setPointerCapture(e.pointerId);
+    e.preventDefault();
+    try { canvas.setPointerCapture(e.pointerId); } catch (err) {}
     pointers.set(e.pointerId, { x: e.clientX, y: e.clientY });
     down = pointers.size === 1 ? { t: performance.now(), moved: 0 } : null;
   });
@@ -646,108 +899,76 @@ ${WAVES.map(w => `      h += ${f(w.amp)} * sin(${f(w.k)} * dot(vec2(${f(w.dir[0]
     if (down) down.moved += Math.abs(e.clientX - prev.x) + Math.abs(e.clientY - prev.y);
     if (pointers.size === 1) {
       view.az -= (e.clientX - prev.x) * 0.006;
-      view.el = Math.min(0.85, Math.max(0.08, view.el + (e.clientY - prev.y) * 0.004));
+      view.el = Math.min(0.85, Math.max(0.1, view.el + (e.clientY - prev.y) * 0.004));
     } else if (pointers.size === 2) {
       const [a, b] = [...pointers.values()];
       const d = Math.hypot(a.x - b.x, a.y - b.y);
       if (!pinchStart) { pinchStart = d; radiusAtPinch = view.targetRadius; }
-      view.targetRadius = Math.min(28, Math.max(7, radiusAtPinch * pinchStart / d));
+      view.targetRadius = Math.min(30, Math.max(8, radiusAtPinch * pinchStart / d));
     }
   });
   const endPointer = e => {
     // A short press that barely moved counts as a tap on the water
-    if (down && e.type === 'pointerup' && down.moved < 10 && performance.now() - down.t < 450) tapAt(e.clientX, e.clientY);
+    if (down && e.type === 'pointerup' && down.moved < 12 && performance.now() - down.t < 500) tapAt(e.clientX, e.clientY);
     down = null;
     pointers.delete(e.pointerId);
     if (pointers.size < 2) pinchStart = 0;
   };
   canvas.addEventListener('pointerup', endPointer);
   canvas.addEventListener('pointercancel', endPointer);
-  canvas.addEventListener('wheel', e => { e.preventDefault(); view.targetRadius = Math.min(28, Math.max(7, view.targetRadius * (1 + e.deltaY * 0.001))); }, { passive: false });
-
-  const weatherBtn = document.getElementById('weather');
-  const ORDER = ['calm', 'wind', 'storm'];
-  let weatherIdx = 0;
-  weatherBtn.addEventListener('click', () => {
-    weatherIdx = (weatherIdx + 1) % ORDER.length;
-    target = STATES[ORDER[weatherIdx]];
-    weatherBtn.textContent = 'Weather: ' + ORDER[weatherIdx][0].toUpperCase() + ORDER[weatherIdx].slice(1);
-  });
-
-  // ------------------------------------------------------------------
-  // SPEECH BUBBLE, PANELS AND GAME STATE
-  // ------------------------------------------------------------------
-  const bubble = document.getElementById('bubble');
-  let bubbleUntil = Infinity, bubblePriority = 0;
-  function say(who, text, seconds = 4, priority = 1) {
-    if (priority < bubblePriority && elapsed < bubbleUntil) return;
-    bubble.innerHTML = `<b>${who}:</b> ${text}`;
-    bubble.classList.remove('off');
-    bubbleUntil = elapsed + seconds; bubblePriority = priority;
-  }
-  const game = { taps: 0, found: 0, arrived: false, paused: false, saidIsland: false, edgeSaidAt: -99, closeSaidAt: -99 };
-  const fishCount = document.getElementById('fish-count');
-  const insetLayer = document.getElementById('inset-layer');
-  const arriveLayer = document.getElementById('arrive-layer');
-  function openInset(i) {
-    const [title, text] = REWARDS[i];
-    document.getElementById('inset-tag').textContent = `Found ${game.found} of ${REWARDS.length}`;
-    document.getElementById('inset-title').textContent = title;
-    document.getElementById('inset-text').textContent = text;
-    insetLayer.hidden = false; game.paused = true;
-    document.getElementById('inset-close').focus();
-  }
-  document.getElementById('inset-close').addEventListener('click', () => { insetLayer.hidden = true; game.paused = false; });
-  document.getElementById('sail-again').addEventListener('click', () => {
-    arriveLayer.hidden = true; game.paused = false; game.arrived = false;
-    boatPos.set(0, 0); boatVel.set(0, 0); game.found = 0; game.saidIsland = false;
-    fishCount.textContent = `Fish 0 / ${REWARDS.length}`;
-    placeFish();
-    say('Skit', 'Again? Tap the sea behind us!', 4, 2);
-  });
+  canvas.addEventListener('wheel', e => { e.preventDefault(); view.targetRadius = Math.min(30, Math.max(8, view.targetRadius * (1 + e.deltaY * 0.001))); }, { passive: false });
+  // Fast tapping must never select text, zoom the page or open a menu
+  for (const type of ['selectstart', 'contextmenu', 'dblclick', 'gesturestart', 'dragstart'])
+    document.addEventListener(type, e => e.preventDefault(), { passive: false });
+  document.addEventListener('touchmove', e => { if (e.touches.length > 1) e.preventDefault(); }, { passive: false });
 
   function resize() {
     const w = panel.clientWidth, h = panel.clientHeight;
+    renderer.setPixelRatio(pixelRatio);
     renderer.setSize(w, h, false);
     camera.aspect = w / h;
-    camera.fov = camera.aspect < 0.8 ? 58 : 45;  // phones in portrait see a bit wider
+    camera.fov = camera.aspect < 0.8 ? 58 : 45;   // phones in portrait see a bit wider
     camera.updateProjectionMatrix();
+    shared.uPx.value = 2 * Math.tan(camera.fov * Math.PI / 360) / h;   // size of one screen pixel, for outlines
+    waterUniforms.uDpr.value = pixelRatio;
   }
   window.addEventListener('resize', resize);
+  if (window.ResizeObserver) new ResizeObserver(resize).observe(panel);
   resize();
 
-  // ------------------------------------------------------------------
+  // ==================================================================
   // ANIMATION LOOP
-  // ------------------------------------------------------------------
+  // ==================================================================
   const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
   const clock = new THREE.Clock();
-  let flash = 0, nextFlash = 4;
-  const boatState = { y: 0, pitch: 0, roll: 0, yaw: 0 };
-  const boatPos = new THREE.Vector2(0, 0), boatVel = new THREE.Vector2(0, 0);
-  const camTarget = new THREE.Vector3(0, 1.6, 0), camGoal = new THREE.Vector3();
+  let flash = 0, nextFlash = 4, slowFrames = 0, frames = 0;
+  const camTarget = new THREE.Vector3(0, 1.9, 0), camGoal = new THREE.Vector3(), tmp = new THREE.Vector3();
+  fishes.forEach(fsh => placeFish(fsh, true));
 
-  function ease(dt) {
+  function frame() {
+    const rawDt = clock.getDelta(), dt = Math.min(rawDt, 0.05);
+    elapsed += dt;
+    waveTime += dt * cur.speed;
+
+    // If the device struggles, lower the resolution a step (keeps phones smooth)
+    if (++frames > 60) {
+      slowFrames = rawDt > 1 / 38 ? slowFrames + 1 : Math.max(0, slowFrames - 1);
+      if (slowFrames > 45 && pixelRatio > 1) { pixelRatio = Math.max(1, pixelRatio - 0.3); slowFrames = 0; resize(); }
+    }
+
+    // Ease the weather towards the chosen one
     const k = 1 - Math.exp(-dt * 1.2);
     for (const key of Object.keys(cur)) {
       const v = target[key];
-      if (typeof v === 'string') cur[key].lerp(target[key + 'C'], k);
-      else cur[key] += (v - cur[key]) * k;
+      if (typeof v === 'string') cur[key].lerp(target[key + 'C'], k); else cur[key] += (v - cur[key]) * k;
     }
-  }
-
-  function frame() {
-    const dt = Math.min(clock.getDelta(), 0.05);
-    elapsed += dt;
-    ease(dt);
-    waveTime += dt * cur.speed;
-
     // Lightning in a storm
     if (target === STATES.storm && !reduceMotion) {
       nextFlash -= dt;
       if (nextFlash <= 0) { flash = 1; nextFlash = 3 + Math.random() * 6; }
     }
     flash = Math.max(0, flash - dt * 4);
-    const flashAmt = flash > 0.5 || (flash > 0.2 && flash < 0.3) ? 1 : 0;
+    shared.uFlash.value = flash > 0.5 || (flash > 0.2 && flash < 0.3) ? 1 : 0;
 
     // Send the current values to the shaders
     waterUniforms.uTime.value = waveTime;
@@ -759,64 +980,31 @@ ${WAVES.map(w => `      h += ${f(w.amp)} * sin(${f(w.k)} * dot(vec2(${f(w.dir[0]
     waterUniforms.uLight.value.copy(cur.light);
     waterUniforms.uLine.value.copy(cur.line);
     waterUniforms.uHaze.value.copy(cur.haze);
-    waterUniforms.uFlash.value = flashAmt;
     skyUniforms.uTop.value.copy(cur.sky);
     skyUniforms.uHorizon.value.copy(cur.horizon);
     skyUniforms.uHaze.value.copy(cur.haze);
-    skyUniforms.uSun.value = cur.sun;
-    skyUniforms.uFlash.value = flashAmt;
-    scene.fog.color.copy(cur.horizon);
-    cloudMat.color.copy(cur.cloud);
-    sunLight.intensity = 0.35 + 0.25 * cur.sun + flashAmt * 0.6;
+    cloudMat.uniforms.uColor.value.copy(cur.cloud);
+    cloudMat.uniforms.uShade.value.copy(cur.cloud).multiply(SHADE_TINT);
+    sunMat.opacity = cur.sun;
 
-    // When a ripple ring reaches the boat, give the boat a shove away from it
+    // When a ripple ring reaches the boat, give the boat a shove away from where you tapped
     for (let i = pendingPush.length - 1; i >= 0; i--) {
       const p = pendingPush[i];
-      const dx = boatPos.x - p.x, dz = boatPos.y - p.z;
-      const d = Math.hypot(dx, dz) || 0.001;
+      const dx = boatPos.x - p.x, dz = boatPos.y - p.z, d = Math.hypot(dx, dz) || 0.001;
       if ((elapsed - p.t) * RIP.speed >= d - 1.5) {
         const push = 5.5 / (1 + d * 0.2);
         boatVel.x += dx / d * push; boatVel.y += dz / d * push;
         pendingPush.splice(i, 1);
       } else if (elapsed - p.t > 8) pendingPush.splice(i, 1);
     }
-    // The boat drifts, slows down in the water, and is gently pulled back to the middle
+    // The boat drifts and slowly loses speed
     boatVel.multiplyScalar(Math.exp(-dt * 0.6));
     if (boatVel.length() > 7) boatVel.setLength(7);
-    // Soft current at the edge of the sea
-    const fromMid = boatPos.length();
-    if (fromMid > SEA_R) {
-      boatVel.addScaledVector(boatPos.clone().normalize(), -(fromMid - SEA_R) * 2.5 * dt);
-      if (elapsed - game.edgeSaidAt > 10) { game.edgeSaidAt = elapsed; say('Dji', 'The current won\'t let us go any further.', 3.5, 2); }
-    }
-    // The island: can't sail into it; getting close means you've arrived
-    const toIsle = boatPos.clone().sub(ISLAND), dIsle = toIsle.length();
-    if (dIsle < ISLAND_R) { boatPos.copy(ISLAND).addScaledVector(toIsle.normalize(), ISLAND_R); boatVel.multiplyScalar(0.3); }
-    if (dIsle < ARRIVE_R && !game.arrived) {
-      game.arrived = true; game.paused = true;
-      setTimeout(() => { arriveLayer.hidden = false; document.getElementById('sail-again').focus(); }, 600);
-    }
     boatPos.addScaledVector(boatVel, dt);
-
-    // Fish bob on the waves; bumping into one collects it
-    for (let i = 0; i < fishes.length; i++) {
-      const f = fishes[i]; if (!f.visible) continue;
-      const h = f.userData.home;
-      const fx = h.x + Math.sin(elapsed * 0.3 + f.userData.phase) * 1.2, fz = h.y + Math.cos(elapsed * 0.25 + f.userData.phase) * 1.2;
-      f.position.set(fx, waveHeight(fx, fz, waveTime, cur.amp) + rippleHeight(fx, fz, elapsed) + 0.15 + Math.abs(Math.sin(elapsed * 2 + f.userData.phase)) * 0.35, fz);
-      f.rotation.y = -(elapsed * 0.3 + f.userData.phase) + Math.PI;
-      f.rotation.z = Math.sin(elapsed * 4 + f.userData.phase) * 0.3;
-      if (!game.paused && Math.hypot(fx - boatPos.x, fz - boatPos.y) < 2.6) {
-        f.visible = false; game.found++;
-        fishCount.textContent = `Fish ${game.found} / ${REWARDS.length}`;
-        splash(fx, f.position.y - 0.3, fz);
-        openInset(i);
-      }
-    }
-    // Slowly turn to face the way it's being pushed
-    const wantYaw = boatVel.length() > 0.4 ? Math.atan2(-boatVel.y, boatVel.x) : boatState.yaw + dt * 0.04;
+    // It turns to face the way it's moving
+    const wantYaw = boatVel.length() > 0.4 ? Math.atan2(-boatVel.y, boatVel.x) : boatState.yaw + dt * 0.03;
     let dy = wantYaw - boatState.yaw; dy = Math.atan2(Math.sin(dy), Math.cos(dy));
-    boatState.yaw += dy * (1 - Math.exp(-dt * 0.8));
+    boatState.yaw += dy * (1 - Math.exp(-dt * 0.9));
 
     // BUOYANCY: sample the sea (waves + ripples) under bow, stern and both sides,
     // then set the boat's height and tilt from those four points.
@@ -826,28 +1014,43 @@ ${WAVES.map(w => `      h += ${f(w.amp)} * sin(${f(w.k)} * dot(vec2(${f(w.dir[0]
       const x = cx + lx * cs + lz * sn, z = cz - lx * sn + lz * cs;
       return waveHeight(x, z, waveTime, cur.amp) + rippleHeight(x, z, elapsed);
     };
-    const hBow = at(1.6, 0), hStern = at(-1.6, 0), hPort = at(0, 1.2), hStar = at(0, -1.2);
+    const hBow = at(1.6, 0), hStern = at(-1.6, 0), hPort = at(0, 1.3), hStar = at(0, -1.3);
     const goal = {
-      y: (hBow + hStern + hPort + hStar) / 4 + 0.75,  // about half the bowl shows above the water
+      y: (hBow + hStern + hPort + hStar) / 4 + 0.72,   // a bit more than half the bowl shows above the water
       pitch: Math.atan2(hBow - hStern, 3.2) * 0.9,
-      roll: -Math.atan2(hPort - hStar, 2.4) * 0.8,
+      roll: -Math.atan2(hPort - hStar, 2.6) * 0.8,
     };
     const s = 1 - Math.exp(-dt * 5);
-    for (const k in goal) boatState[k] += (goal[k] - boatState[k]) * s;
+    for (const key in goal) boatState[key] += (goal[key] - boatState[key]) * s;
     boat.position.set(cx, 0, cz);
     boat.rotation.y = yaw;
     boatBody.position.y = boatState.y;
     boatBody.rotation.set(boatState.roll, 0, boatState.pitch, 'YZX');
+    waterUniforms.uBoat.value.set(cx, cz, cs, sn);
 
     // Ribbon flag ripples, faster in stronger wind
     const fp = flag.geometry.attributes.position;
     for (let i = 0; i < fp.count; i++) {
-      const x = flagBase[i * 3];
-      fp.setZ(i, Math.sin(x * 5 - elapsed * (3 + cur.speed * 5)) * 0.12 * (x / 1.3));
+      const x = flagBase[i * 3], u = x / 1.5;
+      fp.setZ(i, flagBase[i * 3 + 2] + Math.sin(x * 4.4 - elapsed * (3 + cur.speed * 5)) * 0.17 * u);
+      fp.setY(i, flagBase[i * 3 + 1] + Math.sin(x * 2.2 - elapsed * 2.4) * 0.06 * u - 0.1 * u * u);
     }
     fp.needsUpdate = true;
 
-    // Droplets fly up and fall back into the sea
+    // Fish hop on the waves; bump into one to catch it. Fish left far behind move ahead of the boat.
+    for (const fsh of fishes) {
+      const u = fsh.userData, ph = elapsed * 0.3 + u.phase;
+      const fx = u.home.x + Math.sin(ph) * 1.2, fz = u.home.y + Math.cos(ph * 0.83) * 1.2;
+      const hop = Math.max(0, Math.sin(elapsed * 2 + u.phase));
+      fsh.position.set(fx, waveHeight(fx, fz, waveTime, cur.amp) + rippleHeight(fx, fz, elapsed) + 0.1 + hop * 0.45, fz);
+      fsh.rotation.y = -ph + Math.PI;
+      fsh.rotation.z = Math.cos(elapsed * 2 + u.phase) * 0.45;
+      const d = Math.hypot(fx - cx, fz - cz);
+      if (d < 2.5 && !game.paused) { caughtFish(fx, fsh.position.y - 0.3, fz); placeFish(fsh, false); }
+      else if (d > 70) placeFish(fsh, false);
+    }
+
+    // Drops fly up and fall back into the sea
     for (const d of drops) {
       if (!d.visible) continue;
       d.userData.v.y -= 14 * dt;
@@ -855,33 +1058,36 @@ ${WAVES.map(w => `      h += ${f(w.amp)} * sin(${f(w.k)} * dot(vec2(${f(w.dir[0]
       if (d.position.y < waveHeight(d.position.x, d.position.z, waveTime, cur.amp) - 0.3) d.visible = false;
     }
 
-    for (const c of clouds) {
-      c.userData.ang += c.userData.speed * dt * (0.5 + cur.speed);
-      c.position.x = Math.cos(c.userData.ang) * c.userData.rad;
-      c.position.z = Math.sin(c.userData.ang) * c.userData.rad;
-      c.lookAt(0, c.position.y, 0);
-    }
-
     // Camera follows the boat smoothly
-    camTarget.lerp(camGoal.set(cx, 1.6 + boatState.y * 0.5, cz), 1 - Math.exp(-dt * 2));
+    camTarget.lerp(camGoal.set(cx, 1.9 + boatState.y * 0.5, cz), 1 - Math.exp(-dt * 2.5));
     view.radius += (view.targetRadius - view.radius) * (1 - Math.exp(-dt * 6));
     const sway = reduceMotion ? 0 : Math.sin(elapsed * 0.4) * 0.03;
-    const r = view.radius * (camera.aspect < 0.8 ? 1.25 : 1);
+    const r = view.radius * (camera.aspect < 0.8 ? 1.2 : 1);
     camera.position.set(
       camTarget.x + r * Math.cos(view.el) * Math.sin(view.az + sway),
-      Math.max(r * Math.sin(view.el) + boatState.y * 0.3, 1.5),
+      Math.max(r * Math.sin(view.el) + boatState.y * 0.3, 1.8),
       camTarget.z + r * Math.cos(view.el) * Math.cos(view.az + sway)
     );
     camera.lookAt(camTarget);
+    // The sky, sun, clouds and water sheet travel with the camera, so the sea never ends
     sky.position.copy(camera.position);
+    sun.position.copy(camera.position).addScaledVector(SUN_DIR, 330);
+    sun.lookAt(camera.position);
     water.position.set(camTarget.x, 0, camTarget.z);
+    for (const c of clouds) {
+      c.userData.ang += c.userData.speed * dt * (0.5 + cur.speed);
+      c.position.set(camTarget.x + Math.cos(c.userData.ang) * c.userData.rad, c.userData.y, camTarget.z + Math.sin(c.userData.ang) * c.userData.rad);
+      c.lookAt(camTarget.x, c.userData.y, camTarget.z);
+    }
 
-    // Speech bubble sits above the boat on screen
+    // Speech bubble sits above the boat, kept inside the panel
     if (elapsed > bubbleUntil) { bubble.classList.add('off'); bubblePriority = 0; }
+    if (!game.idleSaid && game.taps > 0 && elapsed - game.lastTapAt > 25) { game.idleSaid = true; say('Skit', 'Are we just... floating now?', 4, 1); }
+    tmp.set(cx, boatState.y + 5.3, cz).project(camera);
+    const pw = panel.clientWidth, ph2 = panel.clientHeight, half = bubble.offsetWidth / 2 + 8;
+    bubble.style.left = Math.min(pw - half, Math.max(half, (tmp.x + 1) / 2 * pw)) + 'px';
+    bubble.style.top = Math.max(bubble.offsetHeight + 70, (1 - tmp.y) / 2 * ph2) + 'px';
     bubble.style.visibility = game.paused ? 'hidden' : '';
-    const top = new THREE.Vector3(cx, boatState.y + 4.6, cz).project(camera);
-    bubble.style.left = ((top.x + 1) / 2 * panel.clientWidth) + 'px';
-    bubble.style.top = ((1 - top.y) / 2 * panel.clientHeight) + 'px';
 
     renderer.render(scene, camera);
     requestAnimationFrame(frame);
