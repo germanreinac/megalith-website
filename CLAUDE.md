@@ -11,6 +11,13 @@
   Germán Reina and Lizz Lunney. No release date yet, so no countdown. No island: the sea is
   open and endless, and the Patreon and newsletter links sit in the ? panel.
 - Lettering font: Bruno Ace (Google Fonts), the closest match to the comic's lettering.
-- The published preview artifact is the same page without the html/head wrapper; keep both in step.
+- The boat is Germán's Blender model (`assets/boat/Skit-and-Dji-boat.blend`). Run
+  `python3 assets/boat/export_blend.py <blend> assets/boat/boat-data.js assets/boat/boat.glb` (needs `pip install bpy`)
+  to regenerate the web data after the model changes. Part names are mapped inside that script.
+- Line art rule from Germán's brush set-up (`reference/brush-set-up.jpg`): one line width everywhere,
+  only the opacity varies. Never vary line thickness.
+- Source art lives in Germán's Google Drive folder `megalith` (Ships, Logo, 3D, 0_Pages, Character concepts...).
+  Drive downloads are capped at 10 MB per file.
+- The published preview artifact is the same page without the html/head wrapper and with boat-data.js inlined; keep both in step.
 - The wave maths exists twice (GLSL in the water shader and JavaScript for buoyancy).
   Change both together, or the boat stops sitting on the visible surface.

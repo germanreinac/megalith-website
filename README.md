@@ -16,6 +16,7 @@ It loads its 3D library (Three.js) from the internet, so you need to be online.
 | --- | --- |
 | `index.html` | The whole site for now: layout, water shader, boat, game logic |
 | `assets/` | Germán's art goes here. See `assets/README.md` for what goes in each folder |
+| `reference/` | Reference images copied from Germán's Drive (brush set-up, boat concepts) |
 | `CLAUDE.md` | Notes for Claude when it works on this project |
 
 ## Plan
@@ -25,7 +26,7 @@ The plan, the checklist of art to send, and open questions live in the
 
 ## Status
 
-Play test: an open sea you steer across with ripples, fish to catch, a stand-in boat
-built from simple shapes after the concept drawing, and comic-style water, outlines and
+Play test: an open sea you steer across with ripples, fish to catch, Germán's Blender
+boat model (still a blockout, coloured in code), the Megalith logo, and comic-style water, outlines and
 lettering (Bruno Ace). Next: Germán's water art and boat model, then hosting
 (Netlify or Vercel).
