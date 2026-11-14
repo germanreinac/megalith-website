@@ -19,5 +19,8 @@
 - Source art lives in Germán's Google Drive folder `megalith` (Ships, Logo, 3D, 0_Pages, Character concepts...).
   Drive downloads are capped at 10 MB per file.
 - The published preview artifact is the same page without the html/head wrapper and with boat-data.js inlined; keep both in step.
+- Goal of the toy: moving the boat through the sea should feel satisfying. The water is meant to read as
+  jelly (soft gradients, gloss, wobble); the boat rides on springs, surfs wave slopes, and a held press
+  charges a bigger wave.
 - The wave maths exists twice (GLSL in the water shader and JavaScript for buoyancy).
   Change both together, or the boat stops sitting on the visible surface.
