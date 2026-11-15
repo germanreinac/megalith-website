@@ -1,4 +1,4 @@
-# Megalith website
+# Megalith Islands website
 
 A small, playful website for **Megalith**, the comic by Germán Reina and Lizz Lunney.
 Visitors tap the sea to push Dji and Skit's boat around a little comic-style ocean,
@@ -26,7 +26,8 @@ The plan, the checklist of art to send, and open questions live in the
 
 ## Status
 
-Play test: an open sea you steer across with ripples, fish to catch, Germán's Blender
+Play test: an open sea you steer across with ripples, with lighthouses, sign buoys, a billboard and a
+whirlpool to find, seagulls, five kinds of weather including dusk and night, fish to catch, Germán's Blender
 boat model (still a blockout, coloured in code), the Megalith logo, and comic-style water, outlines and
 lettering (Bruno Ace). Next: Germán's water art and boat model, then hosting
 (Netlify or Vercel).

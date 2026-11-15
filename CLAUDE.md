@@ -1,5 +1,7 @@
 # Notes for Claude
 
+- The comic's title is **Megalith Islands** (the logo wordmark reads MEGALITH; "Islands" is set under it).
+
 - Germán is an artist, not a developer. Explain setup simply, keep code well commented,
   and let him test each step. Ask before big design decisions.
 - Performance on phones matters: keep the water grid and pixel ratio modest, test at 390 px wide.
@@ -8,8 +10,15 @@
   pink sky, lilac clouds with purple outlines, purple line colour on the boat, print grain,
   rounded pink panel borders. Germán's own art in `assets/` always wins over imitations in code.
 - Characters: Dji (the bird with the red ear-tubes) and Skit (the grey cat). The comic is by
-  Germán Reina and Lizz Lunney. No release date yet, so no countdown. No island: the sea is
+  Germán Reina and Lizz Lunney. No release date yet, so no countdown. No destination island: the sea is
   open and endless, and the Patreon and newsletter links sit in the ? panel.
+- The sea is split into 85-unit squares; each square always holds the same thing (a lighthouse, a sign buoy,
+  the Donnie Voyagio billboard, a whirlpool, or nothing). Designs come from `reference/DRIVE-ANALYSIS.md`.
+- Weather cycles calm, wind, storm, dusk, night. Objects are tinted by `shared.uTint`; lighthouse lamps glow at night.
+- Fish are the comic's round, blue, one-eyed fish. Catch rewards are the Patreon reward characters in `assets/rewards/`
+  (embedded in the page as data URIs).
+- Germán's Drive has a folder `Claude Experiments`; he asked that anything saved to Drive for this site go in a new
+  folder inside it.
 - Lettering font: Bruno Ace (Google Fonts), the closest match to the comic's lettering.
 - The boat is Germán's Blender model (`assets/boat/Skit-and-Dji-boat.blend`). Run
   `python3 assets/boat/export_blend.py <blend> assets/boat/boat-data.js assets/boat/boat.glb` (needs `pip install bpy`)
