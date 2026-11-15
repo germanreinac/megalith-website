@@ -173,6 +173,8 @@
   <div class="bubble off" id="bubble" aria-live="polite"></div>
   <span class="hint" id="hint">Tap the sea behind the boat. Hold for a bigger wave.</span>
 
+  <span id="version" style="position:absolute;left:14px;bottom:10px;font-size:10px;color:#6b5a76;pointer-events:none">v8 · jelly domes</span>
+
   <div class="tools">
     <button type="button" class="round" id="weather" aria-label="Weather: calm. Tap to change." title="Change the weather"></button>
     <button type="button" class="round" id="sound" aria-label="Sound is off. Tap to turn on." title="Sound"></button>
@@ -300,9 +302,9 @@ ${WAVES.map(w => `      h += ${f(w.amp)} * sin(${f(w.k)} * dot(vec2(${f(w.dir[0]
   // ==================================================================
   const STATES = {
     calm:  { amp: 0.40, speed: 0.75, foam: 0.97, sun: 1, sky: '#f4bfc6', horizon: '#fbe6e2', haze: '#e6f7ee',
-             deep: '#4fb9b6', mid: '#8fdcc9', light: '#c6f2df', line: '#3550c8', cloud: '#f6e6f4' },
+             deep: '#3fb3bd', mid: '#7fdccb', light: '#cdf6e4', line: '#3550c8', cloud: '#f6e6f4' },
     wind:  { amp: 0.95, speed: 1.15, foam: 0.80, sun: 1, sky: '#e3b1d6', horizon: '#f6e0ec', haze: '#e0f3ec',
-             deep: '#3fa4b2', mid: '#78cfc6', light: '#b6ead9', line: '#2c44bd', cloud: '#eed9f1' },
+             deep: '#339fb8', mid: '#6fd0c8', light: '#bdeedd', line: '#2c44bd', cloud: '#eed9f1' },
     storm: { amp: 1.90, speed: 1.55, foam: 0.62, sun: 0, sky: '#8a82b8', horizon: '#c6bfdb', haze: '#c4d9db',
              deep: '#27799a', mid: '#48a2b0', light: '#86ccc4', line: '#1f2b8c', cloud: '#b9acd1' },
   };
@@ -572,30 +574,54 @@ ${WAVES.map(w => `      h += ${f(w.amp)} * sin(${f(w.k)} * dot(vec2(${f(w.dir[0]
         float t1 = 0.53, t2 = 0.675;
         float inMid  = smoothstep(-fw, fw, F - t1);
         float inDeep = smoothstep(-fw, fw, F - t2);
-        vec3 col = mix(uLight, uMid, inMid);
-        col = mix(col, uDeep, inDeep);
-        vec3 shine = mix(uLight, vec3(1.0), 0.55);
-        float rim = inMid * (1.0 - smoothstep(-fw, fw, Fl - t1));      // light rim on the sunny side
-        float shadow = inMid * (1.0 - smoothstep(-fw, fw, Fs - t1));   // darker edge on the other side
-        col = mix(col, shine, rim * 0.85);
-        col = mix(col, uDeep, shadow * 0.55 * (1.0 - inDeep));
+        // ===== JELLY =====
+        // Every blob is treated as a raised dome of jelly sitting on a lighter sea.
+        vec3 aqua  = mix(uMid, vec3(0.42, 0.80, 0.95), 0.45);          // the bluer tint light picks up inside jelly
+        vec3 shine = mix(uLight, vec3(1.0), 0.7);
+        float lean = clamp((Fs - Fl) * 32.0, -1.0, 1.0);                // +1 = this side of the dome faces the light, -1 = faces away
+        float inset = F - t1;                                           // how far inside the blob we are (0 at its edge)
+        float body = smoothstep(0.0, 0.12, inset);                      // 0 at the edge, 1 in the thick middle
 
-        // --- jelly: soft gradients, glow in the thick parts, and gloss ---------
+        // The open sea between blobs: pale, with slow drifting bands of light and a soft shadow cast by each dome
+        float bands = vnoise(p * 0.035 + vec2(uTime * 0.015, 0.0));
+        vec3 col = mix(uLight, shine, smoothstep(0.35, 0.75, bands) * 0.6);
+        float castSh = smoothstep(t1 - 0.07, t1, Fl) * (1.0 - inMid);     // just outside a blob, on the side away from the light
+        col = mix(col, mix(uMid, uDeep, 0.35), castSh * 0.75);
+
+        // The dome itself: a smooth gradient from its lit side to its far side, deeper where the jelly is thick
+        vec3 dome = mix(uMid, uDeep, body * 0.55);
+        dome = mix(dome, mix(uLight, uMid, 0.35), max(lean, 0.0) * 0.85);
+        dome = mix(dome, uDeep, max(-lean, 0.0) * 0.35 * (1.0 - body));
+        // Light that passed through the jelly glows out near the far edge
+        float glow = max(-lean, 0.0) * (1.0 - smoothstep(0.0, 0.07, inset));
+        dome = mix(dome, aqua + 0.12, glow * 0.85);
+        // Thick dark core with a soft edge
+        float core = smoothstep(t2 - 0.05, t2 + 0.05, F);
+        dome = mix(dome, mix(uDeep, vec3(0.16, 0.42, 0.62), 0.25), core * 0.8);
+        col = mix(col, dome, inMid);
+
+        // Gloss: a wet white streak just inside the lit edge, broken into dabs, plus a small second dab deeper in
+        float broken = smoothstep(0.42, 0.5, vnoise(p * 0.55 + 5.0));
+        float streak = smoothstep(0.012, 0.022, inset) * (1.0 - smoothstep(0.04, 0.052, inset)) * smoothstep(0.35, 0.6, lean) * broken;
+        float dab = smoothstep(0.075, 0.085, inset) * (1.0 - smoothstep(0.1, 0.11, inset)) * smoothstep(0.6, 0.8, lean) * (1.0 - broken);
+        float glossFade = 1.0 - smoothstep(30.0, 75.0, dist);
+        col = mix(col, vec3(1.0), max(streak, dab * 0.8) * inMid * glossFade);
+
+        // The real waves and ripples add to it: slopes catch light, crests glow, dips deepen
         vec3 n = normalize(vN);
         vec3 V = normalize(cameraPosition - vWorld);
         vec3 Ld = normalize(vec3(-0.55, 0.6, 0.35));
-        float slope = dot(n, Ld) - Ld.y;                                   // above 0 = this bit of surface leans towards the light
-        col = mix(col, shine, clamp(slope * 1.7, 0.0, 1.0) * 0.4);
-        col = mix(col, uDeep, clamp(-slope * 1.7, 0.0, 1.0) * 0.5);
-        float thick = hn * 0.55 + (r + bh) * 0.9;                           // crests are thick jelly that glows, dips go deep
-        col = mix(col, mix(uLight, vec3(1.0), 0.3), smoothstep(0.1, 0.9, thick) * 0.42);
-        col = mix(col, uDeep * 0.9, smoothstep(0.1, 0.9, -thick) * 0.45);
-        col = mix(col, mix(uMid, uDeep, 0.65), inMid * smoothstep(0.0, 0.1, F - t1) * 0.35 * (1.0 - inDeep));   // blobs deepen towards their middle
+        float slope = (dot(n, Ld) - Ld.y) / (0.25 + uAmp * 0.35);         // scaled so calm water still shows it
+        col = mix(col, shine, clamp(slope * 1.4, 0.0, 1.0) * 0.45);
+        col = mix(col, mix(uDeep, vec3(0.16, 0.42, 0.62), 0.3), clamp(-slope * 1.4, 0.0, 1.0) * 0.5);
+        float thick = hn * 0.6 + (r + bh) * 1.1;
+        col = mix(col, mix(aqua, vec3(1.0), 0.45), smoothstep(0.15, 0.9, thick) * 0.5);
+        col = mix(col, uDeep * 0.85, smoothstep(0.15, 0.9, -thick) * 0.5);
         float fres = pow(1.0 - max(dot(n, V), 0.0), 3.0);
-        col = mix(col, uSky, fres * 0.3);                                   // the sky's pink slides over the surface at low angles
-        float spec = pow(max(dot(reflect(-Ld, n), V), 0.0), 26.0);
-        float gloss = smoothstep(0.5, 0.62, spec + (vnoise(p * 0.9 + 11.0) - 0.5) * 0.5) * (1.0 - smoothstep(25.0, 60.0, dist));
-        col = mix(col, vec3(1.0), gloss * 0.85);                            // wet white highlights
+        col = mix(col, uSky, fres * 0.35);                                  // the sky's pink slides over the surface at low angles
+        float spec = pow(max(dot(reflect(-Ld, n), V), 0.0), 22.0);
+        float gloss = smoothstep(0.45, 0.55, spec + (vnoise(p * 0.9 + 11.0) - 0.5) * 0.5) * glossFade;
+        col = mix(col, vec3(1.0), gloss * 0.9);                             // wet white highlights on wave faces
 
         // --- blue lines: strong on the shadow side, faint and broken on the light side
         float side = smoothstep(-0.015, 0.015, Fl - Fs);
