@@ -15,8 +15,8 @@
 - The sea is split into 85-unit squares; each square always holds the same thing (a lighthouse, a sign buoy,
   the Donnie Voyagio billboard, a whirlpool, or nothing). Designs come from `reference/DRIVE-ANALYSIS.md`.
 - Weather cycles calm, wind, storm, dusk, night. Objects are tinted by `shared.uTint`; lighthouse lamps glow at night.
-- Fish are the comic's round, blue, one-eyed fish. Catch rewards are the Patreon reward characters in `assets/rewards/`
-  (embedded in the page as data URIs).
+- Fish are the comic's round, blue, one-eyed fish. There is NO fish catching (Germán removed it): fish are
+  ambient and leap out of the boat's way. `assets/rewards/` holds the Patreon reward characters, currently unused.
 - Germán's Drive has a folder `Claude Experiments`; he asked that anything saved to Drive for this site go in a new
   folder inside it.
 - Lettering font: Bruno Ace (Google Fonts), the closest match to the comic's lettering.
@@ -30,9 +30,12 @@
 - The published preview artifact is the same page without the html/head wrapper and with boat-data.js inlined; keep both in step.
 - Goal of the toy: moving the boat through the sea should feel satisfying. The boat rides on springs, surfs
   wave slopes, and a held press charges a bigger wave.
-- Water follows Germán's painting rules (see `reference/DRIVE-ANALYSIS.md`): ONE gradient through the whole sea
-  (never per-blob shading), flat lighter shapes on top, nested broken contour lines, flat pale pill highlights,
-  soft darker patches in calm water. Do not bring back per-blob dome shading or soft gloss.
+- Water is a jelly sea: real-water lighting (sky reflection, light glowing through thick crests, wet highlights,
+  depth shapes under the surface) mixed with Germán's art (his palette, flat lighter blob shapes, ONE outline per
+  shape at a single width, sparse dash marks, outlined foam). Germán found nested contour lines, pill highlights
+  and extra patches "messy": keep the surface clean and smooth.
+- Boat physics: springs for bob/pitch/roll, a keel (resists sideways sliding), weighted turning, surfing on slopes,
+  splashdown ripples after a big pop.
 - Large Drive files: the folder is shared by link, so files of any size download with
   `curl -L "https://drive.usercontent.google.com/download?id=<id>&export=download&confirm=t"`.
 - The wave maths exists twice (GLSL in the water shader and JavaScript for buoyancy).
