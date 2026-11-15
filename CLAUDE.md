@@ -26,10 +26,14 @@
 - Line art rule from Germán's brush set-up (`reference/brush-set-up.jpg`): one line width everywhere,
   only the opacity varies. Never vary line thickness.
 - Source art lives in Germán's Google Drive folder `megalith` (Ships, Logo, 3D, 0_Pages, Character concepts...).
-  Drive downloads are capped at 10 MB per file.
+  The Drive connector caps downloads at 10 MB per file; use the direct link route below for bigger ones.
 - The published preview artifact is the same page without the html/head wrapper and with boat-data.js inlined; keep both in step.
-- Goal of the toy: moving the boat through the sea should feel satisfying. The water is meant to read as
-  jelly (soft gradients, gloss, wobble); the boat rides on springs, surfs wave slopes, and a held press
-  charges a bigger wave.
+- Goal of the toy: moving the boat through the sea should feel satisfying. The boat rides on springs, surfs
+  wave slopes, and a held press charges a bigger wave.
+- Water follows Germán's painting rules (see `reference/DRIVE-ANALYSIS.md`): ONE gradient through the whole sea
+  (never per-blob shading), flat lighter shapes on top, nested broken contour lines, flat pale pill highlights,
+  soft darker patches in calm water. Do not bring back per-blob dome shading or soft gloss.
+- Large Drive files: the folder is shared by link, so files of any size download with
+  `curl -L "https://drive.usercontent.google.com/download?id=<id>&export=download&confirm=t"`.
 - The wave maths exists twice (GLSL in the water shader and JavaScript for buoyancy).
   Change both together, or the boat stops sitting on the visible surface.
