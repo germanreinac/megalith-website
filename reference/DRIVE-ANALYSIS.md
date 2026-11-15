@@ -89,3 +89,36 @@ Export flattened copies under 10 MB (for example 2000 px wide JPGs) of:
 `0_Pages/Chapter 1/All pages`, `Ships/Megalith_Boats.jpg`, the character line-up,
 and `Environment concepts/Concept_Port_Skipjack`. A folder of these would cover
 most of what could not be opened.
+
+## Update: large files (15 Nov 2026)
+
+Germán shared the folder by link (https://drive.google.com/drive/folders/1T7NjkzPD1oysEjK3oNw7N5-aWVbk0dpr),
+and the environment now allows `drive.google.com` and `drive.usercontent.google.com`.
+Large files download with
+`curl -L "https://drive.usercontent.google.com/download?id=<file id>&export=download&confirm=t"`.
+
+Downloaded and looked at: all 24 finished Chapter 1 pages (scenes 1 to 4), `Megalith_Boats.jpg`,
+`Megalith_Boats_W.jpg`, the 2022 main-characters colour test and the May 2026 pages PDF (64 pages;
+only fetched, not yet read page by page).
+
+### How Germán paints water (Chapter 1, scene 1 pages 2 and 3; scene 4 pages 4 and 5)
+
+- One big smooth gradient runs through the whole body of water: green at one end, aqua in the
+  middle, blue at the other. The gradient belongs to the water as a whole, not to each blob.
+- On top sit flat, lighter blob shapes with no shading of their own. Some are outlined, many are not.
+- Lines are nested: a puddle or ripple is two or three contour lines one inside the other,
+  each broken in places, with tapering ends.
+- Highlights are small, flat, pale pills and dots, not soft glows.
+- Calm sea seen from the boat: pale mint base, flat slightly darker mint patches with soft edges,
+  thin outlines on only a few of them, small dark-blue dashes.
+- Wave crests are thick blobby tongues with a lighter flat face and a heavy outline.
+- Grain is strongest inside gradients.
+
+The current shader shades every blob as its own dome. To match the pages it should move the gradient
+to the whole sea, make blobs flat and lighter, and draw nested broken contour lines.
+
+### Story facts from Chapter 1
+
+- Skit lives in a flat in the city; Dji works at the Deep Dive bar and gets fired.
+- Their goal is the Isle of Distant Shadow (the Cave of Cats), from Donnie Voyagio's travel guide.
+- "There's the ferry to Pebble Rock Bay" appears on a sign; the fish follow Skit.
