@@ -3,10 +3,12 @@
 - The logo is just **Megalith** (the wordmark image in `assets/brand/`). Do not add "Islands" to it. The world is
   called the Megalith Islands, and that name can appear inside the scene (for example on the billboard).
 - Layout: the sea fills the whole window. No comic-panel frame (Germán removed it). UI is minimal: the logo
-  top-left with a white sticker edge, three round buttons bottom-right, one hint, speech bubbles. Keep it clean.
-  All text uses Bruno Ace; UI lines use the logo's purple.
-- Controls: tap = one wave; press and hold = a steady stream of waves that follows the finger; double-tap = the boat
-  ducks under and jumps; a quick drag looks around; pinch or scroll zooms.
+  top-left with NO outline, three buttons top-right (rounded squares, soft desaturated yellow `--box`, purple line),
+  one hint, speech bubbles. Keep it clean. All text uses Bruno Ace; UI lines use the logo's purple.
+- Controls (one thumb): tap = one wave (slow mode); press and hold = a fast stream of waves that follows the finger
+  and raises the top speed; double-tap = a hop; double-tap and keep the second tap held = the boat sinks and
+  charges for up to a second, then makes a big jump on release; a quick drag looks around; pinch or scroll zooms.
+  Double-tap timing uses `event.timeStamp`, so slow frames don't break it.
 
 - Germán is an artist, not a developer. Explain setup simply, keep code well commented,
   and let him test each step. Ask before big design decisions.
