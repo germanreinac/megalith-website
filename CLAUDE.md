@@ -21,7 +21,12 @@
   Germán Reina and Lizz Lunney. No release date yet, so no countdown. No destination island: the sea is
   open and endless, and the Patreon and newsletter links sit in the ? panel.
 - The sea is split into 85-unit squares; each square always holds the same thing (a lighthouse, a sign buoy,
-  the Donnie Voyagio billboard, a whirlpool, or nothing). Designs come from `reference/DRIVE-ANALYSIS.md`.
+  a log barrier, the Donnie Voyagio billboard, a whirlpool, or nothing). Designs come from `reference/DRIVE-ANALYSIS.md`.
+- Jumping is gameplay: floating log barriers (`logs` squares, one near the start at x 6, z -34) bounce the boat
+  unless it is in the air; speed adds jump height and is kept in the air, so a running hop clears them. High jumps
+  also clear signs, billboards and lighthouses (`L.top`). Idea parked for later: tricks in the air (swipe to spin or flip).
+- iPhone: touches on the canvas are cancelled (`touchstart`/`touchmove`/`touchend` preventDefault) to stop the
+  double-tap-and-hold text magnifier. Keep that if input code changes.
 - Weather cycles calm, wind, storm, dusk, night. Objects are tinted by `shared.uTint`; lighthouse lamps glow at night.
 - Fish are the comic's round, blue, one-eyed fish. There is NO fish catching (Germán removed it): fish are
   ambient and leap out of the boat's way. `assets/rewards/` holds the Patreon reward characters, currently unused.

@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
 <title>Megalith</title>
 <meta name="description" content="Sail with Dji and Skit across a jelly sea. Megalith, a comic by Germán Reina and Lizz Lunney.">
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -30,8 +30,10 @@
     /* Stop fast tapping from selecting text, zooming or showing the long-press menu */
     -webkit-user-select: none; user-select: none; -webkit-touch-callout: none;
     -webkit-tap-highlight-color: transparent; touch-action: none; overscroll-behavior: none;
+    -webkit-text-size-adjust: 100%;
   }
   .panel { position: fixed; inset: 0; overflow: hidden; }
+  .panel, .panel * { -webkit-user-select: none; user-select: none; -webkit-touch-callout: none; }
   #scene { position: absolute; inset: 0; width: 100%; height: 100%; display: block; touch-action: none; cursor: pointer; }
 
   /* Light print grain over everything (the sea and sky also have their own grain) */
@@ -130,7 +132,7 @@
         <span class="btn" role="link" aria-disabled="true">Patreon</span>
         <span class="btn ghost" role="link" aria-disabled="true">Newsletter</span>
       </div>
-      <span class="note">Preview v14: these two links are added once we have them.</span>
+      <span class="note">Preview v15: these two links are added once we have them.</span>
       <p>Tap the sea for a wave. Hold to go fast. Double-tap to jump, and keep the second tap held for up to 4 seconds to charge a huge one. Drag to look around, pinch or scroll to zoom.</p>
       <div class="row"><button type="button" class="btn ghost" id="about-close">Back to the sea</button></div>
     </div>
@@ -895,6 +897,16 @@ ${WAVES.map(w => `      h += ${f(w.amp)} * sin(${f(w.k)} * dot(vec2(${f(w.dir[0]
     for (const s of [1, -1]) { const p = new THREE.Mesh(new THREE.CircleGeometry(4.3, 32, 0, Math.PI), mat); p.position.set(0, 7.2, s * 0.17); if (s < 0) p.rotation.y = Math.PI; g.add(p); }
   }
 
+  // A floating barrier of three logs with striped marker posts: something to jump over
+  const LOG_HALF = 7.4;      // half the barrier's length
+  function buildLogs(g) {
+    for (const x of [-4.9, 0, 4.9]) lm(g, new THREE.CylinderGeometry(0.6, 0.6, 4.5, 14).rotateZ(Math.PI / 2), toon('#dba676', { map: woodTex, repeat: [3, 2] }), x, 0.15, 0);
+    for (const x of [-7.3, 7.3]) {
+      lm(g, new THREE.CylinderGeometry(0.22, 0.22, 2.6, 10), PAL.cream, x, 1.3, 0, { outline: 1.8 });
+      lm(g, new THREE.CylinderGeometry(0.24, 0.24, 0.6, 10), PAL.pink, x, 1.6, 0, { outline: 0 });
+      lm(g, new THREE.SphereGeometry(0.4, 12, 8), PAL.gold, x, 2.8, 0, { outline: 1.8 });
+    }
+  }
   const CELL = 85;                                   // size of one square of sea
   const cellHash = (a, b, k) => { const s = Math.sin(a * 127.1 + b * 311.7 + k * 74.7) * 43758.5453; return s - Math.floor(s); };
   const landmarks = new Map();                       // squares already built, by "x,z"
@@ -906,18 +918,21 @@ ${WAVES.map(w => `      h += ${f(w.amp)} * sin(${f(w.k)} * dot(vec2(${f(w.dir[0]
     const L = { key, type: 'none', x: (ix + 0.5 + (cellHash(ix, iz, 2) - 0.5) * 0.55) * CELL, z: (iz + 0.5 + (cellHash(ix, iz, 3) - 0.5) * 0.55) * CELL, r: 0, group: null, met: false, phase: h * 6 };
     if (ix === 0 && iz === 0) L.type = 'none';                           // open water where you start
     else if (ix === -1 && iz === -1) { L.type = 'kettle'; L.x = -52; L.z = -40; }   // one lighthouse in view from the start
-    else if (h < 0.26) L.type = 'none';
-    else if (h < 0.6) L.type = ['kettle', 'koala', 'bird', 'torch'][Math.floor(cellHash(ix, iz, 4) * 4)];
-    else if (h < 0.8) L.type = 'sign';
-    else if (h < 0.89) L.type = 'billboard';
+    else if (ix === 0 && iz === -1) { L.type = 'logs'; L.x = 6; L.z = -34; }          // a first barrier close to the start
+    else if (h < 0.2) L.type = 'none';
+    else if (h < 0.48) L.type = ['kettle', 'koala', 'bird', 'torch'][Math.floor(cellHash(ix, iz, 4) * 4)];
+    else if (h < 0.62) L.type = 'sign';
+    else if (h < 0.82) L.type = 'logs';
+    else if (h < 0.9) L.type = 'billboard';
     else L.type = 'whirl';
     if (L.type !== 'none' && L.type !== 'whirl') {
       L.group = new THREE.Group();
-      if (BUILD[L.type]) { BUILD[L.type](L.group); L.r = 4.4; L.group.scale.setScalar(1.25); L.r *= 1.25; }
-      else if (L.type === 'sign') { L.text = SIGNS[Math.floor(cellHash(ix, iz, 5) * SIGNS.length)]; buildSign(L.group, L.text); L.r = 1.5; }
-      else { buildBillboard(L.group); L.r = 3.4; }
+      if (BUILD[L.type]) { BUILD[L.type](L.group); L.r = 4.4; L.group.scale.setScalar(1.25); L.r *= 1.25; L.top = 13.5; }
+      else if (L.type === 'logs') { buildLogs(L.group); L.r = 0; }
+      else if (L.type === 'sign') { L.text = SIGNS[Math.floor(cellHash(ix, iz, 5) * SIGNS.length)]; buildSign(L.group, L.text); L.r = 1.5; L.top = 5; }
+      else { buildBillboard(L.group); L.r = 3.4; L.top = 12.5; }
       L.group.position.set(L.x, 0, L.z);
-      L.group.rotation.y = cellHash(ix, iz, 6) * 6.283;
+      L.group.rotation.y = (ix === 0 && iz === -1) ? 0 : cellHash(ix, iz, 6) * 6.283;
       scene.add(L.group);
     }
     landmarks.set(key, L);
@@ -1163,6 +1178,9 @@ ${WAVES.map(w => `      h += ${f(w.amp)} * sin(${f(w.k)} * dot(vec2(${f(w.dir[0]
   canvas.addEventListener('pointercancel', endPointer);
   canvas.addEventListener('wheel', e => { e.preventDefault(); view.targetRadius = Math.min(30, Math.max(8, view.targetRadius * (1 + e.deltaY * 0.001))); }, { passive: false });
   // Fast tapping must never select text, zoom the page or open a menu
+  // iPhones show a text magnifier on double-tap-and-hold; cancelling the touch on the sea itself stops it
+  for (const type of ['touchstart', 'touchmove', 'touchend'])
+    canvas.addEventListener(type, e => { if (e.cancelable) e.preventDefault(); }, { passive: false });
   for (const type of ['selectstart', 'contextmenu', 'dblclick', 'gesturestart', 'dragstart'])
     document.addEventListener(type, e => e.preventDefault(), { passive: false });
   document.addEventListener('touchmove', e => { if (e.touches.length > 1) e.preventDefault(); }, { passive: false });
@@ -1260,8 +1278,9 @@ ${WAVES.map(w => `      h += ${f(w.amp)} * sin(${f(w.k)} * dot(vec2(${f(w.dir[0]
     const ax = -boatState.slopeX * SURF, az = -boatState.slopeZ * SURF;
     boatVel.x += (ax * cs0 + az * sn0) * dt; boatVel.y += (-ax * sn0 + az * cs0) * dt;
     // It glides, slowly losing speed
-    // Keel: the hull glides forward easily but resists sliding sideways, so it carves curves
-    {
+    // Keel: the hull glides forward easily but resists sliding sideways, so it carves curves.
+    // In the air there is no water to slow it, so a running jump keeps all its speed.
+    if (!boatState.air) {
       const vf = boatVel.x * cs0 - boatVel.y * sn0, vs = boatVel.x * sn0 + boatVel.y * cs0;
       const nf = vf * Math.exp(-dt * 0.36), ns = vs * Math.exp(-dt * 1.15);
       boatVel.set(nf * cs0 + ns * sn0, -nf * sn0 + ns * cs0);
@@ -1275,7 +1294,7 @@ ${WAVES.map(w => `      h += ${f(w.amp)} * sin(${f(w.k)} * dot(vec2(${f(w.dir[0]
     // Top speed: about four times higher while holding. Above the limit the boat eases down, never snaps.
     const HOLD_TOP = 26, TAP_TOP = 9, sp0 = boatVel.length();
     if (hold) { if (sp0 > HOLD_TOP) boatVel.setLength(HOLD_TOP); }
-    else if (sp0 > TAP_TOP) boatVel.setLength(Math.max(TAP_TOP, sp0 * Math.exp(-dt * 0.9)));
+    else if (sp0 > TAP_TOP && !boatState.air && !jumpCharge) boatVel.setLength(Math.max(TAP_TOP, sp0 * Math.exp(-dt * 0.3)));   // glides a long way, so you can let go and still jump at speed
     boatPos.addScaledVector(boatVel, dt);
     const speed = boatVel.length();
     // It turns to face the way it's moving
@@ -1322,7 +1341,8 @@ ${WAVES.map(w => `      h += ${f(w.amp)} * sin(${f(w.k)} * dot(vec2(${f(w.dir[0]
       }
       if (jumpCharge.released && held >= 0.18) {
         jumpCharge = null;
-        boatState.vy = 10 + 26 * pw;                   // a quick hop clears the water; a full charge flies about three boat-heights up
+        boatState.vy = 10 + 26 * pw + speed * 0.4;   // speed adds height: a running hop clears a log barrier
+        //                 // a quick hop clears the water; a full charge flies about three boat-heights up
         boatState.vPitch += 1.2 + 1.6 * pw;
         boatVel.x += cs * (3.5 + 11 * pw); boatVel.y -= sn * (3.5 + 11 * pw);
         ripples[RIP.taps + (wakeSlot++ % (RIP.count - RIP.taps))].set(cx, cz, elapsed, 0.55 + 0.4 * pw);
@@ -1407,13 +1427,38 @@ ${WAVES.map(w => `      h += ${f(w.amp)} * sin(${f(w.k)} * dot(vec2(${f(w.dir[0]
     if (elapsed - lastLandmarkScan > 0.5) { lastLandmarkScan = elapsed; scanLandmarks(cx, cz); }
     for (const L of nearLandmarks) {
       if (!L.group) continue;
+      if (L.type === 'logs') {
+        // The barrier bobs on the sea. Sail into it and you bounce off; be in the air and you sail over.
+        L.group.position.y = waveHeight(L.x, L.z, waveTime, cur.amp) + rippleHeight(L.x, L.z, elapsed) * 0.5;
+        const th = L.group.rotation.y, ux = Math.cos(th), uz = -Math.sin(th), nx = Math.sin(th), nz = Math.cos(th);
+        const dx = cx - L.x, dz = cz - L.z, along = dx * ux + dz * uz, perp = dx * nx + dz * nz;
+        const side = perp >= 0 ? 1 : -1, inLane = Math.abs(along) < LOG_HALF + 1;
+        const high = boatState.y - goal.y > 1.5;                      // hull is above the logs
+        if (inLane && Math.abs(perp) < 2.3) {
+          if (high) L.overAt = elapsed;
+          else {
+            const keep = L.side || side;                               // stay on the side you came from
+            boatPos.x += nx * (keep * 2.3 - perp); boatPos.y += nz * (keep * 2.3 - perp);
+            const into = (boatVel.x * nx + boatVel.y * nz) * keep;
+            if (into < 0) { boatVel.x -= nx * keep * into * 1.6; boatVel.y -= nz * keep * into * 1.6; boatState.vRoll += 0.6; tone(150, 80, 0.15, 0.14); }
+          }
+        } else if (inLane) {
+          if (L.side && L.side !== side && elapsed - (L.overAt || -9) < 2) {   // came down on the far side
+            game.cleared = (game.cleared || 0) + 1; chime();
+            say(...[['Dji', 'Cleared it!'], ['Skit', 'We FLEW!'], ['Dji', 'Clean jump!']][game.cleared % 3], 2.5, 3);
+          }
+          L.side = side;
+        } else L.side = 0;
+        if (!L.met && Math.hypot(dx, dz) < 20) { L.met = true; if (!game.logsSaid) { game.logsSaid = true; say('Skit', 'Logs ahead. Double-tap to jump them!', 4, 2); } }
+        continue;
+      }
       const d = Math.hypot(L.x - cx, L.z - cz);
       if (L.type === 'sign') {      // buoys bob and lean with the waves
         L.group.position.y = waveHeight(L.x, L.z, waveTime, cur.amp) + rippleHeight(L.x, L.z, elapsed) * 0.6;
         L.group.rotation.z = Math.sin(elapsed * 1.3 + L.phase) * 0.08 * (0.5 + cur.amp);
         L.group.rotation.x = Math.cos(elapsed * 1.1 + L.phase) * 0.06 * (0.5 + cur.amp);
       }
-      if (d < L.r + 2.2) {          // bump: the boat can't sail through
+      if (d < L.r + 2.2 && boatState.y - 1.3 < L.top) {          // bump: the boat can't sail through (but a high enough jump goes over)
         const nx = (cx - L.x) / (d || 1), nz = (cz - L.z) / (d || 1);
         boatPos.set(L.x + nx * (L.r + 2.2), L.z + nz * (L.r + 2.2));
         const into = boatVel.x * nx + boatVel.y * nz;
