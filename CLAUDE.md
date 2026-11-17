@@ -5,10 +5,11 @@
 - Layout: the sea fills the whole window. No comic-panel frame (Germán removed it). UI is minimal: the logo
   top-left with NO outline, three buttons top-right (rounded squares, soft desaturated yellow `--box`, purple line),
   one hint, speech bubbles. Keep it clean. All text uses Bruno Ace; UI lines use the logo's purple.
-- Controls (one thumb): tap = one wave (slow mode); press and hold = a fast stream of waves that follows the finger
-  and raises the top speed; double-tap = a hop; double-tap and keep the second tap held = the boat sinks and
-  charges for up to a second, then makes a big jump on release; a quick drag looks around; pinch or scroll zooms.
-  Double-tap timing uses `event.timeStamp`, so slow frames don't break it.
+- Controls (one thumb): tap = one wave (slow mode, top speed 9); press and hold = fast mode: a steady thrust away
+  from the finger plus a stream of waves, top speed 26; double-tap = a hop; double-tap and keep the second tap held =
+  the boat sinks and trembles harder and harder for up to 4 s (`CHARGE_TIME`), then flies about three boat-heights
+  (peak y of roughly 16) on release; a quick drag looks around; pinch or scroll zooms.
+  Out of the water the boat follows gravity (`GRAVITY`), in the water a spring. Double-tap timing uses `event.timeStamp`.
 
 - Germán is an artist, not a developer. Explain setup simply, keep code well commented,
   and let him test each step. Ask before big design decisions.
