@@ -1,4 +1,4 @@
-# Megalith Islands website
+# Megalith website
 
 A small, playful website for **Megalith**, the comic by Germán Reina and Lizz Lunney.
 Visitors tap the sea to push Dji and Skit's boat around a little comic-style ocean,
