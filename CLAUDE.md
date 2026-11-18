@@ -24,7 +24,10 @@
   a log barrier, the Donnie Voyagio billboard, a whirlpool, or nothing). Designs come from `reference/DRIVE-ANALYSIS.md`.
 - Jumping is gameplay: floating log barriers (`logs` squares, one near the start at x 6, z -34) bounce the boat
   unless it is in the air; speed adds jump height and is kept in the air, so a running hop clears them. High jumps
-  also clear signs, billboards and lighthouses (`L.top`). Idea parked for later: tricks in the air (swipe to spin or flip).
+  also clear signs, billboards and lighthouses (`L.top`).
+- Tricks: a swipe while the boat is in the air (`startTrick`) flips it once towards the swipe, pushes it that way
+  (`FLIP_PUSH`) and adds a little lift so flips chain. Landing mid-flip is a crash (loses speed); landing after
+  finished flips gives a small speed burst. On the water the same drag looks around.
 - iPhone: touches on the canvas are cancelled (`touchstart`/`touchmove`/`touchend` preventDefault) to stop the
   double-tap-and-hold text magnifier. Keep that if input code changes.
 - Weather cycles calm, wind, storm, dusk, night. Objects are tinted by `shared.uTint`; lighthouse lamps glow at night.
