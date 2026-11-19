@@ -161,8 +161,8 @@
         <span class="btn" role="link" aria-disabled="true">Patreon</span>
         <span class="btn ghost" role="link" aria-disabled="true">Newsletter</span>
       </div>
-      <span class="note">Preview v21: these two links are added once we have them.</span>
-      <p>Tap the sea for a wave. Hold to go fast. Double-tap to jump, and keep the second tap held for up to 4 seconds to charge a huge one. Swipe while in the air to flip and get thrown that way. Drag to look around, pinch or scroll to zoom. Ramps launch you. Flips tip water out of the boat. Stay out of the whirlpools: Skit is afraid of water.</p>
+      <span class="note">Preview v22: these two links are added once we have them.</span>
+      <p>Tap the sea for a wave. Hold to go fast. Double-tap to jump, and keep the second tap held for up to 4 seconds to charge a huge one. Swipe while in the air to flip and get thrown that way. Drag to look around, pinch or scroll to zoom. Ramps launch you, rails can be ground, buildings can be dodged, and mermaids want flips. Flips tip water out of the boat. Stay out of the whirlpools: Skit is afraid of water.</p>
       <div class="row"><button type="button" class="btn ghost" id="about-close">Back to the sea</button></div>
     </div>
   </div>
@@ -933,6 +933,80 @@ ${WAVES.map(w => `      h += ${f(w.amp)} * sin(${f(w.k)} * dot(vec2(${f(w.dir[0]
   }
 
   // A floating barrier of three logs with striped marker posts: something to jump over
+  // RAIL: a long pipe on posts, sloping down into the water at both ends. Sail up an end at speed,
+  // or drop onto it from a jump, and the boat grinds along it.
+  const RAIL_FLAT = 15, RAIL_END = 21, RAIL_H = 2.4;
+  const railHeight = a => Math.abs(a) <= RAIL_FLAT ? RAIL_H : Math.max(0, RAIL_H * (RAIL_END - Math.abs(a)) / (RAIL_END - RAIL_FLAT));
+  function buildRail(g) {
+    const path = new THREE.CurvePath();
+    const pts = [[-RAIL_END - 1, -0.5], [-RAIL_FLAT, RAIL_H], [RAIL_FLAT, RAIL_H], [RAIL_END + 1, -0.5]].map(([x, y]) => new THREE.Vector3(x, y, 0));
+    for (let i = 0; i < 3; i++) path.add(new THREE.LineCurve3(pts[i], pts[i + 1]));
+    lm(g, new THREE.TubeGeometry(path, 48, 0.3, 8), '#7f7fd6', 0, 0, 0);
+    for (const x of [-15, -7.5, 0, 7.5, 15]) {
+      lm(g, new THREE.CylinderGeometry(0.2, 0.2, 2.9, 10), '#6f6fc4', x, 1.0, 0, { outline: 1.8 });
+      lm(g, new THREE.SphereGeometry(1, 14, 8).scale(1, 0.45, 1), PAL.pink, x, -0.1, 0);
+    }
+    for (const x of [-15, 15]) lm(g, new THREE.SphereGeometry(0.5, 12, 8), PAL.gold, x, RAIL_H + 0.1, 0, { outline: 1.8 });
+  }
+
+  // CITY: a block of the pink and purple buildings from Chapter 1, standing in the sea with canals between them.
+  const windowTex = makeTexture(256, 256, (g, w, h) => {
+    g.strokeStyle = INKC; g.lineWidth = 4;
+    for (let r = 0; r < 3; r++) for (let c = 0; c < 2; c++) { g.fillStyle = TONE; g.fillRect(40 + c * 110, 30 + r * 78, 60, 44); g.strokeRect(40 + c * 110, 30 + r * 78, 60, 44); }
+  }, true);
+  function buildCity(g, L, ix, iz) {
+    L.rects = [];
+    const cols = ['#f2a9d6', '#c9a7ea', '#e9b4dc', '#b79be8', '#f3cfe6', '#d5b3ee'];
+    let k = 0;
+    for (const gx of [-21, 0, 21]) for (const gz of [-21, 0, 21]) {
+      const rnd2 = n => cellHash(ix * 7 + k, iz * 5 - k, n); k++;
+      const hw = 3.6 + rnd2(1) * 1.6, hd = 3.6 + rnd2(2) * 1.6;
+      const top = rnd2(3) < 0.3 ? 2.4 : 6 + rnd2(4) * 11;                 // a few are low enough to hop over
+      const x = gx + (rnd2(5) - 0.5) * 3, z = gz + (rnd2(6) - 0.5) * 3, col = cols[Math.floor(rnd2(7) * cols.length)];
+      lm(g, new THREE.BoxGeometry(hw * 2, top + 2, hd * 2), toon(col, { map: windowTex, repeat: [Math.max(1, Math.round(hw / 2)), Math.max(1, Math.round(top / 4))] }), x, top / 2 - 1, z);
+      lm(g, new THREE.BoxGeometry(hw * 2 + 0.6, 0.4, hd * 2 + 0.6), PAL.cream, x, top + 0.2, z, { outline: 1.8 });       // roof slab
+      if (top > 5 && rnd2(8) < 0.6) lm(g, new THREE.CylinderGeometry(0.9, 0.9, 1.4, 12), '#7fd6cc', x + hw * 0.3, top + 1.1, z - hd * 0.3, { outline: 1.8 });   // water tank
+      if (top > 5 && rnd2(9) < 0.5) lm(g, new THREE.CylinderGeometry(0.08, 0.08, 3, 6), '#6f6fc4', x - hw * 0.4, top + 1.9, z + hd * 0.4, { outline: 1.4 });      // antenna
+      L.rects.push({ x: L.x + x, z: L.z + z, hw, hd, top });
+    }
+  }
+
+  // MERMAID ROCKS: a ring of rocks with mermaids sitting on three of them (stand-in figures until Germán draws them).
+  // Their singing pulls the boat in. Land flips nearby to impress them and they stop.
+  function buildSirens(g, L, ix, iz) {
+    L.rocks = []; L.maids = []; L.impress = 0;
+    for (let i = 0; i < 6; i++) {
+      const a = i / 6 * 6.283 + 0.4, r = 11 + cellHash(ix + i, iz - i, 3) * 3, x = Math.cos(a) * r, z = Math.sin(a) * r, s = 2.3 + cellHash(ix - i, iz + i, 4) * 1.2;
+      lm(g, new THREE.IcosahedronGeometry(s, 1).scale(1, 0.75, 1), PAL.rock, x, 0.3, z, { outline: 2 });
+      L.rocks.push({ x: L.x + x, z: L.z + z, r: s * 0.95 });
+      if (i % 2 === 0) {
+        const m = new THREE.Group(), skin = ['#f6c9a8', '#c9a7ea', '#9fe6d2'][i / 2], tail = ['#35c7b8', '#f28ab8', '#7f7fd6'][i / 2], hair = ['#f4c35a', '#ff6a6a', '#4b2082'][i / 2];
+        lm(m, new THREE.SphereGeometry(0.55, 14, 10).scale(1, 1.25, 0.8), skin, 0, 1.0, 0, { outline: 1.8 });            // body
+        lm(m, new THREE.SphereGeometry(0.5, 14, 10), skin, 0, 2.05, 0, { outline: 1.8 });                                // head
+        lm(m, new THREE.SphereGeometry(0.58, 14, 10).scale(1.05, 1.15, 1.05), hair, -0.12, 2.15, 0, { outline: 1.8 });   // hair
+        lm(m, new THREE.ConeGeometry(0.55, 2.2, 10).rotateZ(-Math.PI / 2), tail, 1.1, 0.35, 0, { outline: 1.8 });        // tail
+        lm(m, new THREE.ConeGeometry(0.5, 0.7, 4).rotateZ(Math.PI / 2).scale(1, 1, 0.3), tail, 2.3, 0.45, 0, { outline: 1.6 });   // fin
+        m.position.set(x, s * 0.75 + 0.2, z); m.rotation.y = Math.atan2(-z, x) + Math.PI;   // facing out to sea
+        g.add(m); L.maids.push(m);
+      }
+    }
+  }
+  // Musical notes that drift from the mermaids to the boat while they sing
+  const noteCanvas = document.createElement('canvas'); noteCanvas.width = noteCanvas.height = 64;
+  { const c = noteCanvas.getContext('2d'); c.fillStyle = '#d6559f'; c.strokeStyle = '#d6559f'; c.lineWidth = 5; c.lineCap = 'round';
+    c.beginPath(); c.ellipse(22, 46, 11, 8, -0.4, 0, 6.3); c.fill(); c.beginPath(); c.moveTo(32, 44); c.lineTo(32, 10); c.lineTo(50, 18); c.stroke(); }
+  const noteMat = new THREE.SpriteMaterial({ map: new THREE.CanvasTexture(noteCanvas), transparent: true, depthWrite: false });
+  const notes = Array.from({ length: 7 }, () => { const n = new THREE.Sprite(noteMat); n.scale.setScalar(1.5); n.visible = false; scene.add(n); return n; });
+  // Called when the boat lands cleanly after flips: mermaids in earshot count them
+  function impressSirens(flips) {
+    for (const L of nearLandmarks) {
+      if (L.type !== 'sirens' || L.impressed || Math.hypot(L.x - boatPos.x, L.z - boatPos.y) > 62) continue;
+      L.impress += flips;
+      if (L.impress >= 3) { L.impressed = true; setTimeout(() => say('Dji', 'They loved it! They\'ve stopped singing.', 4, 4), 900); chime(); }
+      else setTimeout(() => say('Skit', L.impress + ' of 3. They want more flips!', 3, 4), 900);
+    }
+  }
+
   // A floating ramp: a tilted billboard board. Sail up it at speed and it throws the boat into the air.
   function buildRamp(g) {
     const tilt = new THREE.Group(); tilt.rotation.z = 0.3; tilt.position.y = 1.15; g.add(tilt);
@@ -970,22 +1044,32 @@ ${WAVES.map(w => `      h += ${f(w.amp)} * sin(${f(w.k)} * dot(vec2(${f(w.dir[0]
     else if (ix === -1 && iz === -1) { L.type = 'kettle'; L.x = -52; L.z = -40; }   // one lighthouse in view from the start
     else if (ix === 0 && iz === -1) { L.type = 'logs'; L.x = 6; L.z = -34; }          // a first barrier close to the start
     else if (ix === -1 && iz === 0) { L.type = 'ramp'; L.x = -30; L.z = 22; }          // a first ramp close to the start
-    else if (h < 0.16) L.type = 'none';
-    else if (h < 0.42) L.type = ['kettle', 'koala', 'bird', 'torch'][Math.floor(cellHash(ix, iz, 4) * 4)];
-    else if (h < 0.54) L.type = 'sign';
-    else if (h < 0.68) L.type = 'logs';
-    else if (h < 0.82) L.type = 'ramp';
-    else if (h < 0.9) L.type = 'billboard';
+    else if (ix === 1 && iz === -1) { L.type = 'rail'; L.x = 95; L.z = -28; }          // first rail, city and mermaid rocks, each a short sail from the start
+    else if (ix === 1 && iz === 0) { L.type = 'city'; L.x = 126; L.z = 44; }
+    else if (ix === 0 && iz === 1) { L.type = 'sirens'; L.x = 36; L.z = 112; }
+    else if (h < 0.12) L.type = 'none';
+    else if (h < 0.34) L.type = ['kettle', 'koala', 'bird', 'torch'][Math.floor(cellHash(ix, iz, 4) * 4)];
+    else if (h < 0.44) L.type = 'sign';
+    else if (h < 0.56) L.type = 'logs';
+    else if (h < 0.68) L.type = 'ramp';
+    else if (h < 0.77) L.type = 'rail';
+    else if (h < 0.85) L.type = 'city';
+    else if (h < 0.91) L.type = 'sirens';
+    else if (h < 0.95) L.type = 'billboard';
     else L.type = 'whirl';
     if (L.type !== 'none' && L.type !== 'whirl') {
       L.group = new THREE.Group();
       if (BUILD[L.type]) { BUILD[L.type](L.group); L.r = 4.4; L.group.scale.setScalar(1.25); L.r *= 1.25; L.top = 13.5; }
       else if (L.type === 'logs') { buildLogs(L.group); L.r = 0; }
       else if (L.type === 'ramp') { buildRamp(L.group); L.r = 0; }
+      else if (L.type === 'rail') { buildRail(L.group); L.r = 0; }
+      else if (L.type === 'city') { buildCity(L.group, L, ix, iz); L.r = 0; }
+      else if (L.type === 'sirens') { buildSirens(L.group, L, ix, iz); L.r = 0; }
       else if (L.type === 'sign') { L.text = SIGNS[Math.floor(cellHash(ix, iz, 5) * SIGNS.length)]; buildSign(L.group, L.text); L.r = 1.5; L.top = 5; }
       else { buildBillboard(L.group); L.r = 3.4; L.top = 12.5; }
       L.group.position.set(L.x, 0, L.z);
       L.group.rotation.y = (ix === 0 && iz === -1) ? 0 : (ix === -1 && iz === 0) ? 2.5 : cellHash(ix, iz, 6) * 6.283;
+      if (L.type === 'city' || L.type === 'sirens') L.group.rotation.y = 0;      // these keep square to the map, which keeps their collision simple
       scene.add(L.group);
     }
     landmarks.set(key, L);
@@ -1210,7 +1294,7 @@ ${WAVES.map(w => `      h += ${f(w.amp)} * sin(${f(w.k)} * dot(vec2(${f(w.dir[0]
   const raycaster = new THREE.Raycaster();
   const seaPlane = new THREE.Plane(new THREE.Vector3(0, 1, 0), 0);
   const pendingPush = [];   // ripples that haven't reached the boat yet
-  const boatState = { y: 0, pitch: 0, roll: 0, yaw: 0.5, vy: 0, vPitch: 0, vRoll: 0, vYaw: 0, air: false, slopeX: 0, slopeZ: 0, water: 0, rampLift: 0, rampPitch: 0 };
+  const boatState = { y: 0, pitch: 0, roll: 0, yaw: 0.5, vy: 0, vPitch: 0, vRoll: 0, vYaw: 0, air: false, slopeX: 0, slopeZ: 0, water: 0, rampLift: 0, rampPitch: 0, grind: null };
   const boatPos = new THREE.Vector2(0, 0), boatVel = new THREE.Vector2(0, 0);
   let tapSlot = 0, wakeSlot = 0, lastWakeAt = 0;
   const GRAVITY = 22, shake = { roll: 0, pitch: 0, x: 0, squash: 0 };
@@ -1572,6 +1656,7 @@ ${WAVES.map(w => `      h += ${f(w.amp)} * sin(${f(w.k)} * dot(vec2(${f(w.dir[0]
         try { if (navigator.vibrate) navigator.vibrate([30, 40, 30]); } catch (err) {}
         say('Skit', ['Ow. That was the roof.', 'We landed on Dji.', 'Finish the flip NEXT time.', 'Everything is wet now.'][Math.floor(Math.random() * 4)], 3, 3);
       } else if (boatState.tricks > 0) {
+        impressSirens(boatState.tricks);
         boatVel.multiplyScalar(1.15); chime();
         say('Dji', boatState.tricks === 1 ? 'Flip!' : boatState.tricks + ' flips!', 2.5, 3);
       }
@@ -1656,7 +1741,68 @@ ${WAVES.map(w => `      h += ${f(w.amp)} * sin(${f(w.k)} * dot(vec2(${f(w.dir[0]
     // --- Landmarks: lighthouses, signs, billboard, whirlpool ------------------
     if (elapsed - lastLandmarkScan > 0.5) { lastLandmarkScan = elapsed; scanLandmarks(cx, cz); }
     boatState.rampLift = 0; boatState.rampPitch = 0;
+    let singer = null;                     // the mermaid rocks that are singing at the boat right now, if any
     for (const L of nearLandmarks) {
+      if (L.type === 'rail' && L.group) {
+        const th = L.group.rotation.y, ux = Math.cos(th), uz = -Math.sin(th), nx = Math.sin(th), nz = Math.cos(th);
+        const dx = cx - L.x, dz = cz - L.z, along = dx * ux + dz * uz, perp = dx * nx + dz * nz, h = railHeight(along);
+        if (boatState.grind === L) {
+          // GRINDING: locked to the pipe, sliding along it with sparks, and thrown off the far end
+          boatPos.set(L.x + ux * along, L.z + uz * along);
+          const sp = Math.max(13, boatVel.length());
+          boatVel.set(ux * L.dir * sp, uz * L.dir * sp);
+          boatState.rampLift = h + 1.0;
+          boatState.vRoll += Math.sin(elapsed * 9) * dt * 1.4;
+          if (elapsed > (L.sparkAt || 0)) { L.sparkAt = elapsed + 0.1; splash(cx, h + 0.4, cz, 2, 0.9); tone(900 + Math.random() * 500, 700, 0.05, 0.05, 'square'); }
+          const offEnd = Math.abs(along) > RAIL_END - 0.6 && along * L.dir > 0;
+          if (offEnd || boatState.air || capsize) {
+            if (offEnd) { boatState.vy = 9; boatState.air = true; game.grinds = (game.grinds || 0) + 1; say('Dji', ['Grind!', 'Smooth.', 'Like butter.'][game.grinds % 3], 2.2, 3); }
+            boatState.grind = null;
+          }
+        } else if (Math.abs(perp) < 1.9 && Math.abs(along) < RAIL_END && !capsize && !boatState.grind) {
+          const vA = boatVel.x * ux + boatVel.y * uz;
+          const fromWater = !boatState.air && Math.abs(along) > RAIL_FLAT + 1.5 && vA * -Math.sign(along) > 5;        // heading in at a sloping end
+          const fromAir = boatState.air && boatState.vy < 0 && boatState.y - 1.3 < h + 0.7 && boatState.y - 1.3 > h - 1.6 && Math.abs(vA) > 2;   // dropping onto it
+          if (fromWater || fromAir) {
+            boatState.grind = L; L.dir = vA >= 0 ? 1 : -1; boatState.air = false; boatState.vy = 0; trick = null;
+            tone(500, 1100, 0.15, 0.14, 'square');
+          }
+        }
+        if (!L.met && Math.hypot(dx, dz) < 30) { L.met = true; if (!game.railSeen) { game.railSeen = true; say('Dji', 'A rail! Go fast up the end, or jump on.', 4.5, 2); } }
+        continue;
+      }
+      if (L.type === 'city' && L.group) {
+        // Buildings: solid unless the boat is above the roof
+        for (const r of L.rects) {
+          const dx = cx - r.x, dz = cz - r.z, px = r.hw + 2 - Math.abs(dx), pz = r.hd + 2 - Math.abs(dz);
+          if (px <= 0 || pz <= 0 || boatState.y - 1.3 >= r.top) continue;
+          if (px < pz) { const sg = dx >= 0 ? 1 : -1; boatPos.x += sg * px; if (boatVel.x * sg < 0) boatVel.x *= -0.45; }
+          else { const sg = dz >= 0 ? 1 : -1; boatPos.y += sg * pz; if (boatVel.y * sg < 0) boatVel.y *= -0.45; }
+          if (elapsed - (L.bumpAt || -9) > 0.4) { L.bumpAt = elapsed; boatState.vRoll += 0.5; tone(150, 80, 0.15, 0.14); }
+        }
+        if (!L.met && Math.hypot(cx - L.x, cz - L.z) < 55) { L.met = true; if (!game.citySeen) { game.citySeen = true; say('Skit', 'Somebody built a town in the sea.', 4, 2); } }
+        continue;
+      }
+      if (L.type === 'sirens' && L.group) {
+        const dx = cx - L.x, dz = cz - L.z, d = Math.hypot(dx, dz) || 1;
+        const singing = !L.impressed && d < 50 && !fear;
+        if (singing) {
+          singer = L;
+          if (d > 4) { const pull = 8 * (1 - d / 50) + 2; boatVel.x -= dx / d * pull * dt; boatVel.y -= dz / d * pull * dt; }   // the song draws the boat in
+          if (!L.said) { L.said = true; say('Skit', 'That singing... steer closer. Just a bit closer.', 4.5, 3); setTimeout(() => say('Dji', 'Mermaids! Do some flips, that might impress them.', 5, 3), 5200); }
+          if (elapsed > (L.noteAt || 0)) { L.noteAt = elapsed + 0.55; tone([523, 659, 784, 659, 880, 784][Math.floor(elapsed / 0.55) % 6], 500, 0.5, 0.06); }
+        }
+        for (const r of L.rocks) {                                     // the rocks themselves
+          const rx = cx - r.x, rz = cz - r.z, rd = Math.hypot(rx, rz) || 1, pen = r.r + 2 - rd;
+          if (pen <= 0 || boatState.y - 1.3 > 2.4) continue;
+          boatPos.x += rx / rd * pen; boatPos.y += rz / rd * pen;
+          const into = (boatVel.x * rx + boatVel.y * rz) / rd;
+          if (into < 0) { boatVel.x -= rx / rd * into * 1.5; boatVel.y -= rz / rd * into * 1.5; }
+          if (elapsed - (L.hitAt || -9) > 1.6) { L.hitAt = elapsed; addWater(0.2); boatState.vRoll += 1; tone(130, 60, 0.25, 0.2); splash(cx, 0.4, cz, 10, 1.3); say('Skit', 'ROCKS! We hit the rocks!', 2.5, 3); }
+        }
+        L.maids.forEach((m, i) => { m.rotation.z = Math.sin(elapsed * (L.impressed ? 6 : 1.6) + i * 2) * (L.impressed ? 0.22 : 0.1); });   // they sway; once impressed they wave
+        continue;
+      }
       if (L.type === 'ramp' && L.group) {
         L.group.position.y = waveHeight(L.x, L.z, waveTime, cur.amp) * 0.5;
         const th = L.group.rotation.y, ux = Math.cos(th), uz = -Math.sin(th), nx = Math.sin(th), nz = Math.cos(th);
@@ -1767,6 +1913,16 @@ ${WAVES.map(w => `      h += ${f(w.amp)} * sin(${f(w.k)} * dot(vec2(${f(w.dir[0]
       }
       if (left <= 0) endFear();
     }
+
+    // Notes drift from the singing mermaids to the boat
+    notes.forEach((n, i) => {
+      n.visible = !!singer;
+      if (!singer) return;
+      const m = singer.maids[i % singer.maids.length], k = (elapsed * 0.35 + i / notes.length) % 1;
+      const mx = singer.x + m.position.x, mz = singer.z + m.position.z;
+      n.position.set(mx + (cx - mx) * k, 3.5 + Math.sin(k * Math.PI) * 3 + Math.sin(elapsed * 3 + i) * 0.4, mz + (cz - mz) * k);
+      n.material.opacity = 1;
+    });
 
     // Lighthouse lamps and the night glow
     glowMat.opacity = cur.night * 0.9;

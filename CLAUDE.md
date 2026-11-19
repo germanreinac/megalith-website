@@ -23,7 +23,7 @@
   Germán Reina and Lizz Lunney. No release date yet, so no countdown. No destination island: the sea is
   open and endless, and the Patreon and newsletter links sit in the ? panel.
 - The sea is split into 85-unit squares; each square always holds the same thing (a lighthouse, a sign buoy,
-  a log barrier, a ramp, the Donnie Voyagio billboard, a whirlpool, or nothing). Designs come from `reference/DRIVE-ANALYSIS.md`.
+  a log barrier, a ramp, a rail, a city block, mermaid rocks, the Donnie Voyagio billboard, a whirlpool, or nothing). Designs come from `reference/DRIVE-ANALYSIS.md`.
 - Jumping is gameplay: floating log barriers (`logs` squares, one near the start at x 6, z -34) bounce the boat
   unless it is in the air; speed adds jump height and is kept in the air, so a running hop clears them. High jumps
   also clear signs, billboards and lighthouses (`L.top`).
@@ -46,8 +46,15 @@
   they spin (reach 22), so a drifting boat spirals in; holding to go fast can still escape.
 - Germán often writes in Spanish: reply in the language he used.
 - Ramps (`ramp` squares, one near the start at x -30, z 22): sail up the low end at speed and the boat is launched.
-- Ideas agreed but not built yet: mermaid rocks (singing pulls the boat onto rocks; do tricks to impress them and
-  stop it), a district of buildings standing in the sea to sail between, and rails to grind.
+- Rails (`rail` squares, first at x 95, z -28): a pipe on posts sloping into the water at both ends. Go up an end
+  at speed, or drop onto it from a jump, and the boat grinds (`boatState.grind`): locked to the pipe, sparks, thrown
+  off the far end.
+- City (`city` squares, first at x 126, z 44): nine buildings in a 3 by 3 block with canals between; solid unless the
+  boat is above the roof (`L.rects`), and a few are low enough to hop.
+- Mermaid rocks (`sirens` squares, first at x 36, z 112): a ring of rocks, three with stand-in mermaids. Their
+  singing pulls the boat in and notes drift to it; hitting a rock adds water. Three flips landed cleanly within
+  earshot (`impressSirens`) impress them for good and they stop. The mermaids are simple shapes: replace with
+  Germán's designs when he has them.
 - Camera: free drag as before, and while holding (fast mode) it eases round to sit behind the boat's direction of
   travel, so sliding the thumb steers and the view turns with it.
 - iPhone: touches on the canvas are cancelled (`touchstart`/`touchmove`/`touchend` preventDefault) to stop the
