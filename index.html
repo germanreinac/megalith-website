@@ -72,6 +72,32 @@
   .hint.off { opacity: 0; }
 
   /* Speech bubble that follows the boat */
+  /* Water-in-the-boat gauge (only shown when there is water aboard) */
+  .meter {
+    position: absolute; right: var(--right); top: calc(var(--top) + 54px); width: 148px;
+    display: grid; gap: 4px; background: var(--box); border: 2.5px solid var(--logo); border-radius: 13px;
+    padding: 6px 9px 8px; font-size: 10px; pointer-events: none;
+  }
+  .meter i { display: block; height: 9px; border: 2px solid var(--logo); border-radius: 6px; overflow: hidden; background: #fff; }
+  .meter b { display: block; height: 100%; width: 0; background: #62cfc4; }
+  /* Skit's hallucination: countdown and a dark pulsing edge */
+  .fear-ui {
+    position: absolute; left: 50%; top: calc(var(--top) + 54px); transform: translateX(-50%);
+    display: grid; justify-items: center; gap: 2px; pointer-events: none; text-align: center;
+    color: #f6ff7a; text-shadow: 0 0 0 #000, 2px 2px 0 #2a0b52, -2px 2px 0 #2a0b52, 2px -2px 0 #2a0b52, -2px -2px 0 #2a0b52;
+  }
+  @media (max-width: 600px) { .fear-ui { top: calc(var(--top) + 118px); } }   /* below the water gauge on phones */
+  .fear-ui span { font-size: 13px; letter-spacing: 0.2em; text-transform: uppercase; }
+  .fear-ui strong { font-weight: 400; font-size: 46px; line-height: 1; font-variant-numeric: tabular-nums; }
+  .fear-fx {
+    position: absolute; inset: 0; pointer-events: none;
+    background: radial-gradient(ellipse at center, rgba(40, 0, 80, 0) 38%, rgba(26, 0, 60, 0.82) 100%);
+    animation: dread 1.1s ease-in-out infinite alternate;
+  }
+  .fear .logo { filter: brightness(0) invert(1); opacity: .85; }
+  @keyframes dread { from { opacity: .55; } to { opacity: 1; } }
+  @media (prefers-reduced-motion: reduce) { .fear-fx { animation: none; } }
+
   .bubble {
     position: absolute; left: 0; top: 0; width: max-content; max-width: min(230px, 62vw);
     background: #fff; border: 2.5px solid var(--ink); border-radius: 16px;
@@ -114,6 +140,9 @@
 
   <h1 class="logo"><img class="word" src="data:image/png;base64,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" alt="Megalith"></h1>
 
+  <div class="fear-fx" id="fear-fx" hidden></div>
+  <div class="fear-ui" id="fear-ui" hidden><span>Escape!</span><strong id="fear-time">30</strong></div>
+  <div class="meter" id="water-ui" hidden><span>Water aboard: flip to tip it out</span><i><b id="water-fill"></b></i></div>
   <div class="bubble off" id="bubble" aria-live="polite"></div>
   <span class="hint" id="hint">Tap for a wave, hold to go fast. Double-tap to jump (keep it held to charge). Swipe in the air to flip.</span>
 
@@ -132,8 +161,8 @@
         <span class="btn" role="link" aria-disabled="true">Patreon</span>
         <span class="btn ghost" role="link" aria-disabled="true">Newsletter</span>
       </div>
-      <span class="note">Preview v19: these two links are added once we have them.</span>
-      <p>Tap the sea for a wave. Hold to go fast. Double-tap to jump, and keep the second tap held for up to 4 seconds to charge a huge one. Swipe while in the air to flip and get thrown that way. Drag to look around, pinch or scroll to zoom.</p>
+      <span class="note">Preview v20: these two links are added once we have them.</span>
+      <p>Tap the sea for a wave. Hold to go fast. Double-tap to jump, and keep the second tap held for up to 4 seconds to charge a huge one. Swipe while in the air to flip and get thrown that way. Drag to look around, pinch or scroll to zoom. Ramps launch you. Flips tip water out of the boat. Stay out of the whirlpools: Skit is afraid of water.</p>
       <div class="row"><button type="button" class="btn ghost" id="about-close">Back to the sea</button></div>
     </div>
   </div>
@@ -247,6 +276,9 @@ ${WAVES.map(w => `      h += ${f(w.amp)} * sin(${f(w.k)} * dot(vec2(${f(w.dir[0]
     night: { amp: 0.45, speed: 0.70, foam: 0.97, sun: 0, night: 1, tint: '#7585c6', white: '#a9e6d8', sky: '#1c2350', horizon: '#34437c', haze: '#2c4a6c',
              deep: '#0f3f58', mid: '#1c6877', light: '#3fa594', line: '#0c1848', cloud: '#3c4577' },
   };
+  // Skit's hallucination: everything darker, the sea in acid colours. Not on the weather button.
+  STATES.fear = { amp: 1.5, speed: 1.7, foam: 0.72, sun: 0, night: 0.85, tint: '#b592ee', white: '#eaff7a', sky: '#12062e', horizon: '#4a1470', haze: '#35105a',
+                  deep: '#2a0f6e', mid: '#c02fd0', light: '#35f0d0', line: '#0a0324', cloud: '#5a2590' };
   const ORDER = ['calm', 'wind', 'storm', 'dusk', 'night'];
   for (const st of Object.values(STATES)) for (const [k, v] of Object.entries(st)) if (typeof v === 'string') st[k + 'C'] = new THREE.Color(v);
   let weatherIdx = 0, target = STATES.calm;
@@ -669,6 +701,9 @@ ${WAVES.map(w => `      h += ${f(w.amp)} * sin(${f(w.k)} * dot(vec2(${f(w.dir[0]
   part(new THREE.CylinderGeometry(0.04, 0.04, 1.0, 8), WOOD_DARK, { pos: [0, 5.2, 0.02], outline: 1.6 });
   // Plank deck with its hatch and ladder (drawn texture)
   part(new THREE.CircleGeometry(1, 40).rotateX(-Math.PI / 2).scale(1.95, 1, 1.12), toon(DECK, { map: deckTex, cut: -1 }), { pos: [-0.2, DECK_Y, 0], outline: 0 });
+  // Water that has got into the boat: a pool that rises over the deck (see "WATER ABOARD" below)
+  const bilge = part(new THREE.CircleGeometry(1, 40).rotateX(-Math.PI / 2).scale(1.9, 1, 1.08), toon('#7fded2', { cut: -1 }), { pos: [-0.2, DECK_Y + 0.04, 0], outline: 0 });
+  bilge.visible = false;
   // Little door in the dome
   {
     const a = 0.6, dir = [Math.cos(a), Math.sin(a)];
@@ -898,6 +933,21 @@ ${WAVES.map(w => `      h += ${f(w.amp)} * sin(${f(w.k)} * dot(vec2(${f(w.dir[0]
   }
 
   // A floating barrier of three logs with striped marker posts: something to jump over
+  // A floating ramp: a tilted billboard board. Sail up it at speed and it throws the boat into the air.
+  function buildRamp(g) {
+    const tilt = new THREE.Group(); tilt.rotation.z = 0.3; tilt.position.y = 1.15; g.add(tilt);
+    lm(tilt, new THREE.BoxGeometry(8.4, 0.35, 5.2), PAL.cream, 0, 0, 0);
+    const tex = signTexture(512, 320, (c, w, h) => {       // big arrows painted on the board
+      c.strokeStyle = '#d6559f'; c.lineWidth = 34; c.lineCap = 'round'; c.lineJoin = 'round';
+      for (const x of [90, 230, 370]) { c.beginPath(); c.moveTo(x, 60); c.lineTo(x + 90, h / 2); c.lineTo(x, h - 60); c.stroke(); }
+    });
+    const top = new THREE.Mesh(new THREE.PlaneGeometry(7.8, 4.7), new THREE.MeshBasicMaterial({ map: tex, transparent: true }));
+    top.rotation.x = -Math.PI / 2; top.position.y = 0.19; tilt.add(top);
+    for (const z of [-2.1, 2.1]) {
+      lm(g, new THREE.CylinderGeometry(0.2, 0.2, 2.6, 10), '#6f6fc4', 3.3, 1.0, z, { outline: 1.8 });                       // posts under the high end
+      lm(g, new THREE.CylinderGeometry(0.55, 0.55, 8, 14).rotateZ(Math.PI / 2), PAL.pink, 0, -0.1, z * 1.15);              // floats
+    }
+  }
   const LOG_HALF = 7.4;      // half the barrier's length
   function buildLogs(g) {
     for (const x of [-4.9, 0, 4.9]) lm(g, new THREE.CylinderGeometry(0.6, 0.6, 4.5, 14).rotateZ(Math.PI / 2), toon('#dba676', { map: woodTex, repeat: [3, 2] }), x, 0.15, 0);
@@ -916,23 +966,26 @@ ${WAVES.map(w => `      h += ${f(w.amp)} * sin(${f(w.k)} * dot(vec2(${f(w.dir[0]
     if (landmarks.has(key)) return landmarks.get(key);
     const h = cellHash(ix, iz, 1);
     const L = { key, type: 'none', x: (ix + 0.5 + (cellHash(ix, iz, 2) - 0.5) * 0.55) * CELL, z: (iz + 0.5 + (cellHash(ix, iz, 3) - 0.5) * 0.55) * CELL, r: 0, group: null, met: false, phase: h * 6 };
-    if (ix === 0 && iz === 0) L.type = 'none';                           // open water where you start
+    if (ix === 0 && iz === 0) { L.type = 'whirl'; L.x = 48; L.z = 40; }     // a whirlpool within reach of the start
     else if (ix === -1 && iz === -1) { L.type = 'kettle'; L.x = -52; L.z = -40; }   // one lighthouse in view from the start
     else if (ix === 0 && iz === -1) { L.type = 'logs'; L.x = 6; L.z = -34; }          // a first barrier close to the start
-    else if (h < 0.2) L.type = 'none';
-    else if (h < 0.48) L.type = ['kettle', 'koala', 'bird', 'torch'][Math.floor(cellHash(ix, iz, 4) * 4)];
-    else if (h < 0.62) L.type = 'sign';
-    else if (h < 0.82) L.type = 'logs';
+    else if (ix === -1 && iz === 0) { L.type = 'ramp'; L.x = -30; L.z = 22; }          // a first ramp close to the start
+    else if (h < 0.16) L.type = 'none';
+    else if (h < 0.42) L.type = ['kettle', 'koala', 'bird', 'torch'][Math.floor(cellHash(ix, iz, 4) * 4)];
+    else if (h < 0.54) L.type = 'sign';
+    else if (h < 0.68) L.type = 'logs';
+    else if (h < 0.82) L.type = 'ramp';
     else if (h < 0.9) L.type = 'billboard';
     else L.type = 'whirl';
     if (L.type !== 'none' && L.type !== 'whirl') {
       L.group = new THREE.Group();
       if (BUILD[L.type]) { BUILD[L.type](L.group); L.r = 4.4; L.group.scale.setScalar(1.25); L.r *= 1.25; L.top = 13.5; }
       else if (L.type === 'logs') { buildLogs(L.group); L.r = 0; }
+      else if (L.type === 'ramp') { buildRamp(L.group); L.r = 0; }
       else if (L.type === 'sign') { L.text = SIGNS[Math.floor(cellHash(ix, iz, 5) * SIGNS.length)]; buildSign(L.group, L.text); L.r = 1.5; L.top = 5; }
       else { buildBillboard(L.group); L.r = 3.4; L.top = 12.5; }
       L.group.position.set(L.x, 0, L.z);
-      L.group.rotation.y = (ix === 0 && iz === -1) ? 0 : cellHash(ix, iz, 6) * 6.283;
+      L.group.rotation.y = (ix === 0 && iz === -1) ? 0 : (ix === -1 && iz === 0) ? 2.5 : cellHash(ix, iz, 6) * 6.283;
       scene.add(L.group);
     }
     landmarks.set(key, L);
@@ -954,6 +1007,54 @@ ${WAVES.map(w => `      h += ${f(w.amp)} * sin(${f(w.k)} * dot(vec2(${f(w.dir[0]
   // ==================================================================
   // SEAGULLS (from Skipjack's basket): a small flock crosses the sky now and then
   // ==================================================================
+  // ==================================================================
+  // SKIT'S HALLUCINATION. Skit is afraid of water. If the boat is sucked into a whirlpool he panics:
+  // the world turns dark and acid-coloured, a storm rises, and sea creatures chase the boat.
+  // Escape them for FEAR_TIME seconds. Being caught throws water into the boat.
+  // ==================================================================
+  const FEAR_TIME = 30, MONSTER_SPEED = 16.5;
+  let fear = null, fearReadyAt = 0;       // fear = { t0, caught, after } while it lasts
+  const monsters = [];
+  for (let i = 0; i < 3; i++) {
+    const m = makeFish(['#2a1458', '#3a0f4f', '#14204f'][i], ['#ff4fd8', '#35f0d0', '#eaff7a'][i]);
+    m.scale.setScalar(4.4);
+    for (const sd of [1, -1]) {             // glowing eyes
+      const glow = new THREE.Sprite(new THREE.SpriteMaterial({ map: glowMat.map, transparent: true, depthWrite: false, blending: THREE.AdditiveBlending, color: ['#ff6ad8', '#6affea', '#f6ff7a'][i] }));
+      glow.position.set(0.2, 0.08, sd * 0.5); glow.scale.setScalar(1.3); m.add(glow);
+    }
+    for (let k = 0; k < 4; k++) {           // a row of teeth
+      const tooth = new THREE.Mesh(new THREE.ConeGeometry(0.05, 0.16, 4).rotateX(Math.PI), new THREE.MeshBasicMaterial({ color: '#fff6d0' }));
+      tooth.position.set(0.5, -0.12, (k - 1.5) * 0.11); m.add(tooth);
+    }
+    m.visible = false; m.userData = { phase: i * 2.1, speed: MONSTER_SPEED + i * 1.2 };
+    scene.add(m); monsters.push(m);
+  }
+  function placeMonster(m, far) {           // behind the boat, out in the dark
+    const back = boatVel.length() > 1 ? Math.atan2(-boatVel.y, -boatVel.x) : Math.random() * 6.283;
+    const a = back + (Math.random() - 0.5) * 2.2;
+    m.position.set(boatPos.x + Math.cos(a) * far, -2, boatPos.y + Math.sin(a) * far);
+  }
+  function startFear() {
+    if (fear || elapsed < fearReadyAt) return false;
+    fear = { t0: elapsed, caught: 0, after: target };
+    target = STATES.fear;
+    monsters.forEach((m, i) => { placeMonster(m, 60 + i * 14); m.visible = true; });
+    panel.classList.add('fear');
+    $('fear-ui').hidden = false; $('fear-fx').hidden = false;
+    tone(90, 45, 1.2, 0.25, 'sawtooth');
+    say('Skit', 'N-no. Not the water. NOT THE WATER!', 4, 4);
+    return true;
+  }
+  function endFear() {
+    target = fear.after;
+    monsters.forEach(m => { m.visible = false; });
+    panel.classList.remove('fear');
+    $('fear-ui').hidden = true; $('fear-fx').hidden = true;
+    say('Dji', fear.caught === 0 ? 'Skit. Skit! There\'s nothing there. You outran nothing.' : 'It wasn\'t real, Skit. The water in the boat is, though.', 5, 4);
+    if (fear.caught === 0) chime();
+    fear = null; fearReadyAt = elapsed + 12;
+  }
+
   const gulls = new THREE.Group(); gulls.visible = false; scene.add(gulls);
   const gullMat = toon('#ffffff', { shade: '#d9e3ee', fog: false });
   const gullList = [];
@@ -1082,7 +1183,7 @@ ${WAVES.map(w => `      h += ${f(w.amp)} * sin(${f(w.k)} * dot(vec2(${f(w.dir[0]
   weatherBtn.addEventListener('click', () => {
     weatherIdx = (weatherIdx + 1) % ORDER.length;
     const name = ORDER[weatherIdx];
-    target = STATES[name];
+    if (fear) fear.after = STATES[name]; else target = STATES[name];   // during a hallucination the choice waits
     weatherBtn.innerHTML = ICONS[name];
     weatherBtn.setAttribute('aria-label', `Weather: ${name}. Tap to change.`);
     say(...{ calm: ['Dji', 'Ahh. Much better.'], wind: ['Dji', 'The wind is picking up!'], storm: ['Skit', 'I think I\'m going to be sick...'],
@@ -1109,7 +1210,7 @@ ${WAVES.map(w => `      h += ${f(w.amp)} * sin(${f(w.k)} * dot(vec2(${f(w.dir[0]
   const raycaster = new THREE.Raycaster();
   const seaPlane = new THREE.Plane(new THREE.Vector3(0, 1, 0), 0);
   const pendingPush = [];   // ripples that haven't reached the boat yet
-  const boatState = { y: 0, pitch: 0, roll: 0, yaw: 0.5, vy: 0, vPitch: 0, vRoll: 0, vYaw: 0, air: false, slopeX: 0, slopeZ: 0 };
+  const boatState = { y: 0, pitch: 0, roll: 0, yaw: 0.5, vy: 0, vPitch: 0, vRoll: 0, vYaw: 0, air: false, slopeX: 0, slopeZ: 0, water: 0, rampLift: 0, rampPitch: 0 };
   const boatPos = new THREE.Vector2(0, 0), boatVel = new THREE.Vector2(0, 0);
   let tapSlot = 0, wakeSlot = 0, lastWakeAt = 0;
   const GRAVITY = 22, shake = { roll: 0, pitch: 0, x: 0, squash: 0 };
@@ -1180,6 +1281,12 @@ ${WAVES.map(w => `      h += ${f(w.amp)} * sin(${f(w.k)} * dot(vec2(${f(w.dir[0]
       view.targetRadius = Math.min(30, Math.max(8, radiusAtPinch * pinchStart / d));
     }
   });
+  // WATER ABOARD: bad landings, deep charges and sea monsters put water in the boat
+  function addWater(amount) {
+    boatState.water = Math.min(1, boatState.water + amount);
+    if (boatState.water > 0.5 && elapsed - (game.waterSaidAt || -99) > 14) { game.waterSaidAt = elapsed; say('Skit', 'We\'re full of water! Flip to tip it out!', 4, 2); }
+  }
+
   // A big impact (a charged launch or a hard landing) throws water and fish into the air.
   // 'power' runs from 0 to 1.
   function burst(x, z, power) {
@@ -1215,6 +1322,9 @@ ${WAVES.map(w => `      h += ${f(w.amp)} * sin(${f(w.k)} * dot(vec2(${f(w.dir[0]
     // Tumble so the mast tips towards the swipe: turn about the level axis at right angles to it
     trick = { axis: new THREE.Vector3(dz, 0, -dx).applyAxisAngle(new THREE.Vector3(0, 1, 0), -boatState.yaw), t0: elapsed };
     boatState.tricks = (boatState.tricks || 0) + 1;
+    // A flip tips water out of the boat
+    const out = Math.min(boatState.water, 0.34);
+    if (out > 0.03) { boatState.water -= out; splash(boatPos.x, boatState.y + 1.2, boatPos.y, Math.round(6 + out * 40), 1.5, 1.8); }
     tone(500, 900, 0.22, 0.12, 'triangle');
     try { if (navigator.vibrate) navigator.vibrate(12); } catch (err) {}
   }
@@ -1296,8 +1406,8 @@ ${WAVES.map(w => `      h += ${f(w.amp)} * sin(${f(w.k)} * dot(vec2(${f(w.dir[0]
       if (typeof v === 'string') cur[key].lerp(target[key + 'C'], k); else cur[key] += (v - cur[key]) * k;
     }
     // Lightning in a storm
-    if (target === STATES.storm && !reduceMotion) {
-      nextFlash -= dt;
+    if ((target === STATES.storm || fear) && !reduceMotion) {
+      nextFlash -= dt * (fear ? 2.5 : 1);
       if (nextFlash <= 0) { flash = 1; nextFlash = 3 + Math.random() * 6; }
     }
     flash = Math.max(0, flash - dt * 4);
@@ -1312,6 +1422,10 @@ ${WAVES.map(w => `      h += ${f(w.amp)} * sin(${f(w.k)} * dot(vec2(${f(w.dir[0]
     waterUniforms.uMid.value.copy(cur.mid);
     waterUniforms.uLight.value.copy(cur.light);
     waterUniforms.uLine.value.copy(cur.line);
+    if (fear) {   // the acid colours keep shifting
+      waterUniforms.uLight.value.offsetHSL(Math.sin(elapsed * 1.7) * 0.2, 0, 0);
+      waterUniforms.uMid.value.offsetHSL(Math.cos(elapsed * 1.3) * 0.16, 0, 0);
+    }
     waterUniforms.uHaze.value.copy(cur.haze);
     waterUniforms.uSky.value.copy(cur.horizon);
     waterUniforms.uSkyTop.value.copy(cur.sky);
@@ -1358,12 +1472,13 @@ ${WAVES.map(w => `      h += ${f(w.amp)} * sin(${f(w.k)} * dot(vec2(${f(w.dir[0]
     // Holding is the fast mode: a steady shove away from the finger, building over the first second
     if (hold && !capsize) {
       const dx = boatPos.x - hold.x, dz = boatPos.y - hold.z, d = Math.hypot(dx, dz) || 1;
-      const thrust = 20 * (0.35 + 0.65 * Math.min(1, (elapsed - hold.t0) / 0.9));
+      const thrust = 20 * (0.35 + 0.65 * Math.min(1, (elapsed - hold.t0) / 0.9)) * (1 - 0.4 * boatState.water);
       boatVel.x += dx / d * thrust * dt; boatVel.y += dz / d * thrust * dt;
     }
     // Top speed: about four times higher while holding. Above the limit the boat eases down, never snaps.
-    const soaked = elapsed < (boatState.soakedUntil || 0);      // after a bad landing the boat is heavy with water
-    const HOLD_TOP = soaked ? 13 : 26, TAP_TOP = soaked ? 6 : 9, sp0 = boatVel.length();
+    // WATER ABOARD makes the boat heavy: lower top speed, weaker push. Flips tip it out.
+    const wet = boatState.water;
+    const HOLD_TOP = 26 * (1 - 0.55 * wet), TAP_TOP = 9 * (1 - 0.35 * wet), sp0 = boatVel.length();
     if (hold) { if (sp0 > HOLD_TOP) boatVel.setLength(Math.max(HOLD_TOP, sp0 * Math.exp(-dt * 2))); }
     else if (sp0 > TAP_TOP && !boatState.air && !jumpCharge) boatVel.setLength(Math.max(TAP_TOP, sp0 * Math.exp(-dt * 0.3)));   // glides a long way, so you can let go and still jump at speed
     boatPos.addScaledVector(boatVel, dt);
@@ -1417,6 +1532,7 @@ ${WAVES.map(w => `      h += ${f(w.amp)} * sin(${f(w.k)} * dot(vec2(${f(w.dir[0]
         boatState.vPitch += 1.2 + 1.6 * pw;
         boatState.air = true;
         boatVel.x += cs * (3.5 + 11 * pw); boatVel.y -= sn * (3.5 + 11 * pw);
+        addWater(0.3 * pw);                             // sinking deep to charge lets water pour in
         burst(cx, cz, pw);                              // the longer the charge, the more water and fish go up with the boat
         tone(220, 600 + 500 * pw, 0.3 + 0.2 * pw, 0.2, 'triangle');
         try { if (navigator.vibrate) navigator.vibrate(10 + pw * 30); } catch (err) {}
@@ -1424,8 +1540,8 @@ ${WAVES.map(w => `      h += ${f(w.amp)} * sin(${f(w.k)} * dot(vec2(${f(w.dir[0]
       }
     }
     const goal = {
-      y: (hBow + hStern + hPort + hStar) / 4 + 0.3 - duck,    // about half the hull shows above the water
-      pitch: Math.atan2(hBow - hStern, 4.4) * 0.9 + Math.min(0.12, speed * 0.012),   // nose lifts a little at speed
+      y: (hBow + hStern + hPort + hStar) / 4 + 0.3 - duck - 0.5 * boatState.water + boatState.rampLift,    // about half the hull shows; lower when full of water
+      pitch: Math.atan2(hBow - hStern, 4.4) * 0.9 + Math.min(0.12, speed * 0.012) + boatState.rampPitch,   // nose lifts a little at speed
       roll: -Math.atan2(hPort - hStar, 2.6) * 0.8 + lean,
     };
     // ...and springs carry it there, so it bobs and wobbles before it settles
@@ -1450,7 +1566,7 @@ ${WAVES.map(w => `      h += ${f(w.amp)} * sin(${f(w.k)} * dot(vec2(${f(w.dir[0]
         // It loses most of its speed and stays slow and waterlogged for a few seconds after.
         const u = (elapsed - trick.t0) / FLIP_TIME;
         capsize = { axis: trick.axis.clone(), ang: u * u * (3 - 2 * u) * Math.PI * 2, vel: 5.5, t0: elapsed };   // it hits the water still turning
-        boatVel.multiplyScalar(0.45); boatState.soakedUntil = elapsed + 4.5;
+        boatVel.multiplyScalar(0.45); addWater(0.45);              // a bad landing ships a lot of water
         crown(cx, cz, 0.45); splash(cx, 0.3, cz, 22, 1.6); tone(140, 60, 0.35, 0.22);
         try { if (navigator.vibrate) navigator.vibrate([30, 40, 30]); } catch (err) {}
         say('Skit', ['Ow. That was the roof.', 'We landed on Dji.', 'Finish the flip NEXT time.', 'Everything is wet now.'][Math.floor(Math.random() * 4)], 3, 3);
@@ -1538,7 +1654,30 @@ ${WAVES.map(w => `      h += ${f(w.amp)} * sin(${f(w.k)} * dot(vec2(${f(w.dir[0]
 
     // --- Landmarks: lighthouses, signs, billboard, whirlpool ------------------
     if (elapsed - lastLandmarkScan > 0.5) { lastLandmarkScan = elapsed; scanLandmarks(cx, cz); }
+    boatState.rampLift = 0; boatState.rampPitch = 0;
     for (const L of nearLandmarks) {
+      if (L.type === 'ramp' && L.group) {
+        L.group.position.y = waveHeight(L.x, L.z, waveTime, cur.amp) * 0.5;
+        const th = L.group.rotation.y, ux = Math.cos(th), uz = -Math.sin(th), nx = Math.sin(th), nz = Math.cos(th);
+        const dx = cx - L.x, dz = cz - L.z, along = dx * ux + dz * uz, perp = dx * nx + dz * nz;
+        const vUp = boatVel.x * ux + boatVel.y * uz;                   // speed up the slope
+        if (Math.abs(perp) < 3 && along > -4.8 && along < 4.4 && !boatState.air && !capsize) {
+          if (vUp > 3) {
+            // riding up: the boat climbs and tips back, and flies off the top
+            boatState.rampLift = 2.4 * Math.min(1, (along + 4.8) / 8); boatState.rampPitch = 0.3;
+            if (along > 3.0) {
+              boatState.vy = 6 + vUp * 0.75; boatState.air = true;
+              tone(260, 820, 0.3, 0.18, 'triangle'); splash(cx, 2, cz, 8, 1.4);
+              if (!game.rampSaid) { game.rampSaid = true; say('Dji', 'RAMP!', 2, 3); }
+            }
+          } else if (vUp < -1 && along > 2.2) {                         // ran into the tall end: bounce off
+            boatPos.x += ux * (4.4 - along); boatPos.y += uz * (4.4 - along);
+            boatVel.x -= ux * vUp * 1.6; boatVel.y -= uz * vUp * 1.6; boatState.vRoll += 0.6; tone(150, 80, 0.15, 0.14);
+          }
+        }
+        if (!L.met && Math.hypot(dx, dz) < 22) { L.met = true; if (!game.rampSeen) { game.rampSeen = true; say('Dji', 'A ramp! Hold to go fast and hit the low end.', 4.5, 2); } }
+        continue;
+      }
       if (!L.group) continue;
       if (L.type === 'logs') {
         // The barrier bobs on the sea. Sail into it and you bounce off; be in the air and you sail over.
@@ -1598,14 +1737,45 @@ ${WAVES.map(w => `      h += ${f(w.amp)} * sin(${f(w.k)} * dot(vec2(${f(w.dir[0]
           whirl.flungAt = elapsed;
           boatVel.set(-dz / d * 8 + dx / d * 5, dx / d * 8 + dz / d * 5); boatState.vy += 4;
           splash(cx, 0, cz, 14); tone(180, 620, 0.35, 0.2, 'triangle');
-          say('Skit', 'AGAIN!', 2.5, 3);
+          if (!startFear()) say('Skit', 'AGAIN!', 2.5, 3);
         }
       }
+    }
+
+    // Skit's hallucination: countdown, and the creatures hunting the boat
+    if (fear) {
+      const left = FEAR_TIME - (elapsed - fear.t0);
+      const shown = Math.max(0, Math.ceil(left));
+      if (shown !== fear.shown) { fear.shown = shown; $('fear-time').textContent = shown; if (shown <= 5 && shown > 0) tone(700, 700, 0.08, 0.1, 'square'); }
+      for (const m of monsters) {
+        const u = m.userData, dx = cx - m.position.x, dz = cz - m.position.z, d = Math.hypot(dx, dz) || 1;
+        m.position.x += dx / d * u.speed * dt; m.position.z += dz / d * u.speed * dt;
+        const surf = waveHeight(m.position.x, m.position.z, waveTime, cur.amp);
+        m.position.y += (surf + 0.9 + Math.sin(elapsed * 3 + u.phase) * 0.9 - m.position.y) * (1 - Math.exp(-dt * 3));   // they surge up out of the deep
+        m.rotation.y = Math.atan2(-dz, dx); m.rotation.z = Math.sin(elapsed * 5 + u.phase) * 0.25;
+        if (d > 80) placeMonster(m, 45);                                 // lost the boat: come up again behind it
+        if (d < 4.2 && !boatState.air && !game.paused && elapsed > (fear.safeUntil || 0)) {                 // CAUGHT (they can't reach a boat in the air)
+          fear.caught++; fear.safeUntil = elapsed + 3;                   // a moment to get away before the next one can grab
+          addWater(0.3); boatVel.multiplyScalar(0.35); boatState.vy += 6; boatState.vRoll += 1.5;
+          crown(cx, cz, 0.35); splash(cx, 0.4, cz, 18, 1.6); tone(120, 50, 0.4, 0.25, 'sawtooth');
+          try { if (navigator.vibrate) navigator.vibrate([40, 30, 40]); } catch (err) {}
+          say('Skit', ['IT HAS MY TAIL!', 'IT\'S IN THE BOAT!', 'GO GO GO GO!'][fear.caught % 3], 2.5, 4);
+          for (const o of monsters) if (Math.hypot(cx - o.position.x, cz - o.position.z) < 22) placeMonster(o, 44);   // they all dive and come round again
+        }
+      }
+      if (left <= 0) endFear();
     }
 
     // Lighthouse lamps and the night glow
     glowMat.opacity = cur.night * 0.9;
     lampMat.color.setRGB(1, 0.95 - 0.1 * cur.night, 0.77 - 0.2 * cur.night);
+
+    // Water aboard: the pool over the deck and the gauge. It also drains very slowly by itself.
+    boatState.water = Math.max(0, boatState.water - dt * 0.012);
+    bilge.visible = boatState.water > 0.04;
+    bilge.position.y = DECK_Y + 0.04 + 0.34 * boatState.water;
+    const wPct = Math.round(boatState.water * 100);
+    if (wPct !== game.wPct) { game.wPct = wPct; $('water-ui').hidden = wPct < 5; $('water-fill').style.width = wPct + '%'; }
 
     // Flags on the ropes flutter; the fish on the mast turns with the wind
     for (let i = 0; i < bunting.length; i++) bunting[i].rotation.x = Math.sin(elapsed * (2.5 + cur.speed * 2) + i * 1.7) * (0.15 + cur.speed * 0.12);
@@ -1660,7 +1830,11 @@ ${WAVES.map(w => `      h += ${f(w.amp)} * sin(${f(w.k)} * dot(vec2(${f(w.dir[0]
       Math.max(r * Math.sin(view.el) + boatState.y * 0.3, 1.8),
       camTarget.z + r * Math.cos(view.el) * Math.cos(view.az + sway)
     );
+    if (fear && !reduceMotion) {            // the whole world shakes while Skit panics
+      camera.position.x += Math.sin(elapsed * 31) * 0.14; camera.position.y += Math.sin(elapsed * 37 + 1) * 0.1;
+    }
     camera.lookAt(camTarget);
+    if (fear && !reduceMotion) camera.rotation.z += Math.sin(elapsed * 2.3) * 0.045;
     // The sky, sun, clouds and water sheet travel with the camera, so the sea never ends
     sky.position.copy(camera.position);
     sun.position.copy(camera.position).addScaledVector(SUN_DIR, 330);
@@ -1678,7 +1852,7 @@ ${WAVES.map(w => `      h += ${f(w.amp)} * sin(${f(w.k)} * dot(vec2(${f(w.dir[0]
     tmp.set(cx, boatState.y + 6.4, cz).project(camera);
     const pw = panel.clientWidth, ph2 = panel.clientHeight, half = bubble.offsetWidth / 2 + 8;
     bubble.style.left = Math.min(pw - half, Math.max(half, (tmp.x + 1) / 2 * pw)) + 'px';
-    bubble.style.top = Math.max(bubble.offsetHeight + 70, (1 - tmp.y) / 2 * ph2) + 'px';
+    bubble.style.top = Math.max(bubble.offsetHeight + (fear ? 175 : 70), (1 - tmp.y) / 2 * ph2) + 'px';
     bubble.style.visibility = game.paused ? 'hidden' : '';
 
     renderer.render(scene, camera);

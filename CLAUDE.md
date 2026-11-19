@@ -23,7 +23,7 @@
   Germán Reina and Lizz Lunney. No release date yet, so no countdown. No destination island: the sea is
   open and endless, and the Patreon and newsletter links sit in the ? panel.
 - The sea is split into 85-unit squares; each square always holds the same thing (a lighthouse, a sign buoy,
-  a log barrier, the Donnie Voyagio billboard, a whirlpool, or nothing). Designs come from `reference/DRIVE-ANALYSIS.md`.
+  a log barrier, a ramp, the Donnie Voyagio billboard, a whirlpool, or nothing). Designs come from `reference/DRIVE-ANALYSIS.md`.
 - Jumping is gameplay: floating log barriers (`logs` squares, one near the start at x 6, z -34) bounce the boat
   unless it is in the air; speed adds jump height and is kept in the air, so a running hop clears them. High jumps
   also clear signs, billboards and lighthouses (`L.top`).
@@ -35,6 +35,16 @@
 - Impact scales with charge: `burst()` raises a water crown (`crown()`: a ring wall with tongues plus a centre
   spout, up to about 9 units tall), spray, fat blobs, a bigger ripple and up to five fish, on a charged launch and on
   hard landings. Germán wants the water, not only the fish, to carry the impact.
+- Water aboard (`boatState.water`, 0 to 1): added by bad landings (0.45), deep jump charges (up to 0.3) and monster
+  catches (0.3); each flip tips out 0.34; it drains very slowly alone. It lowers top speed (up to 55%), weakens
+  thrust and sits the boat lower. A pool shows over the deck and a gauge appears under the buttons.
+- Skit's hallucination (`fear`): Skit is afraid of water, so being sucked to the centre of a whirlpool starts a
+  30 s escape (`FEAR_TIME`): the `STATES.fear` acid-on-dark palette, storm, camera shake, a dark pulsing edge and
+  three sea creatures (`monsters`, speed 16.5 to 19) chasing the boat. A catch adds water and slows the boat; a boat
+  in the air can't be caught. One whirlpool sits near the start at x 48, z 40.
+- Ramps (`ramp` squares, one near the start at x -30, z 22): sail up the low end at speed and the boat is launched.
+- Ideas agreed but not built yet: mermaid rocks (singing pulls the boat onto rocks; do tricks to impress them and
+  stop it), a district of buildings standing in the sea to sail between, and rails to grind.
 - Camera: free drag as before, and while holding (fast mode) it eases round to sit behind the boat's direction of
   travel, so sliding the thumb steers and the view turns with it.
 - iPhone: touches on the canvas are cancelled (`touchstart`/`touchmove`/`touchend` preventDefault) to stop the
