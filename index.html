@@ -161,7 +161,7 @@
         <span class="btn" role="link" aria-disabled="true">Patreon</span>
         <span class="btn ghost" role="link" aria-disabled="true">Newsletter</span>
       </div>
-      <span class="note">Preview v20: these two links are added once we have them.</span>
+      <span class="note">Preview v21: these two links are added once we have them.</span>
       <p>Tap the sea for a wave. Hold to go fast. Double-tap to jump, and keep the second tap held for up to 4 seconds to charge a huge one. Swipe while in the air to flip and get thrown that way. Drag to look around, pinch or scroll to zoom. Ramps launch you. Flips tip water out of the boat. Stay out of the whirlpools: Skit is afraid of water.</p>
       <div class="row"><button type="button" class="btn ghost" id="about-close">Back to the sea</button></div>
     </div>
@@ -1012,7 +1012,7 @@ ${WAVES.map(w => `      h += ${f(w.amp)} * sin(${f(w.k)} * dot(vec2(${f(w.dir[0]
   // the world turns dark and acid-coloured, a storm rises, and sea creatures chase the boat.
   // Escape them for FEAR_TIME seconds. Being caught throws water into the boat.
   // ==================================================================
-  const FEAR_TIME = 30, MONSTER_SPEED = 16.5;
+  const FEAR_TIME = 30, MONSTER_SPEED = 16.5, FEAR_RADIUS = 8;   // FEAR_RADIUS: how near a whirlpool's centre sets it off
   let fear = null, fearReadyAt = 0;       // fear = { t0, caught, after } while it lasts
   const monsters = [];
   for (let i = 0; i < 3; i++) {
@@ -1567,6 +1567,7 @@ ${WAVES.map(w => `      h += ${f(w.amp)} * sin(${f(w.k)} * dot(vec2(${f(w.dir[0]
         const u = (elapsed - trick.t0) / FLIP_TIME;
         capsize = { axis: trick.axis.clone(), ang: u * u * (3 - 2 * u) * Math.PI * 2, vel: 5.5, t0: elapsed };   // it hits the water still turning
         boatVel.multiplyScalar(0.45); addWater(0.45);              // a bad landing ships a lot of water
+        startFear();                                                // ...and being dunked like that sets off Skit's panic
         crown(cx, cz, 0.45); splash(cx, 0.3, cz, 22, 1.6); tone(140, 60, 0.35, 0.22);
         try { if (navigator.vibrate) navigator.vibrate([30, 40, 30]); } catch (err) {}
         say('Skit', ['Ow. That was the roof.', 'We landed on Dji.', 'Finish the flip NEXT time.', 'Everything is wet now.'][Math.floor(Math.random() * 4)], 3, 3);
@@ -1729,11 +1730,12 @@ ${WAVES.map(w => `      h += ${f(w.amp)} * sin(${f(w.k)} * dot(vec2(${f(w.dir[0]
     waterUniforms.uWhirl.value.set(whirl.x, whirl.z, whirl.s, 0);
     if (whirl.s > 0.05) {
       const dx = cx - whirl.x, dz = cz - whirl.z, d = Math.hypot(dx, dz) || 0.001;
-      if (d < 17) {
-        const pull = whirl.s * (1 - d / 17);
-        boatVel.x += (-dz / d * 10 - dx / d * 4.5) * pull * dt; boatVel.y += (dx / d * 10 - dz / d * 4.5) * pull * dt;
+      if (d < 22) {
+        // It drags the boat round AND inwards; the pull towards the middle is the stronger one, so the boat spirals in
+        const pull = whirl.s * (1 - d / 22);
+        boatVel.x += (-dz / d * 7 - dx / d * 12) * pull * dt; boatVel.y += (dx / d * 7 - dz / d * 12) * pull * dt;
         if (!whirl.said) { whirl.said = true; say('Skit', 'Is the sea meant to do that?', 3.5, 2); }
-        if (d < 2.6 && elapsed - whirl.flungAt > 4) {
+        if (d < FEAR_RADIUS && elapsed - whirl.flungAt > 4) {      // close enough to the middle: Skit panics
           whirl.flungAt = elapsed;
           boatVel.set(-dz / d * 8 + dx / d * 5, dx / d * 8 + dz / d * 5); boatState.vy += 4;
           splash(cx, 0, cz, 14); tone(180, 620, 0.35, 0.2, 'triangle');

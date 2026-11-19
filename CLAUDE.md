@@ -38,10 +38,13 @@
 - Water aboard (`boatState.water`, 0 to 1): added by bad landings (0.45), deep jump charges (up to 0.3) and monster
   catches (0.3); each flip tips out 0.34; it drains very slowly alone. It lowers top speed (up to 55%), weakens
   thrust and sits the boat lower. A pool shows over the deck and a gauge appears under the buttons.
-- Skit's hallucination (`fear`): Skit is afraid of water, so being sucked to the centre of a whirlpool starts a
+- Skit's hallucination (`fear`): Skit is afraid of water, so coming within `FEAR_RADIUS` (8) of a whirlpool's centre,
+  or a bad landing after a trick, starts a
   30 s escape (`FEAR_TIME`): the `STATES.fear` acid-on-dark palette, storm, camera shake, a dark pulsing edge and
   three sea creatures (`monsters`, speed 16.5 to 19) chasing the boat. A catch adds water and slows the boat; a boat
-  in the air can't be caught. One whirlpool sits near the start at x 48, z 40.
+  in the air can't be caught. One whirlpool sits near the start at x 48, z 40. Whirlpools pull inwards harder than
+  they spin (reach 22), so a drifting boat spirals in; holding to go fast can still escape.
+- Germán often writes in Spanish: reply in the language he used.
 - Ramps (`ramp` squares, one near the start at x -30, z 22): sail up the low end at speed and the boat is launched.
 - Ideas agreed but not built yet: mermaid rocks (singing pulls the boat onto rocks; do tricks to impress them and
   stop it), a district of buildings standing in the sea to sail between, and rails to grind.
