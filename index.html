@@ -132,7 +132,7 @@
         <span class="btn" role="link" aria-disabled="true">Patreon</span>
         <span class="btn ghost" role="link" aria-disabled="true">Newsletter</span>
       </div>
-      <span class="note">Preview v18: these two links are added once we have them.</span>
+      <span class="note">Preview v19: these two links are added once we have them.</span>
       <p>Tap the sea for a wave. Hold to go fast. Double-tap to jump, and keep the second tap held for up to 4 seconds to charge a huge one. Swipe while in the air to flip and get thrown that way. Drag to look around, pinch or scroll to zoom.</p>
       <div class="row"><button type="button" class="btn ghost" id="about-close">Back to the sea</button></div>
     </div>
@@ -995,16 +995,43 @@ ${WAVES.map(w => `      h += ${f(w.amp)} * sin(${f(w.k)} * dot(vec2(${f(w.dir[0]
 
   const dropMat = toon('#d9f7ee', { shade: '#a9e3dc' });
   const dropGeo = new THREE.SphereGeometry(1, 12, 8);
-  const drops = Array.from({ length: 96 }, () => {
+  const drops = Array.from({ length: 150 }, () => {
     const m = withOutline(new THREE.Mesh(dropGeo, dropMat), 1.8, WATER_INK);
     m.visible = false; m.userData.v = new THREE.Vector3();
     scene.add(m); return m;
   });
   let nextDrop = 0;
-  function splash(x, y, z, n = 7, power = 1) {      // power > 1 throws the drops higher, wider and bigger
+  // WATER CROWN: the big splash. A wall of water with tongues along its top bursts up in a ring,
+  // spreads, and falls back, with a taller spout in the middle. Its size follows the power of the impact.
+  function crownGeo(rBottom, rTop, tongues, depth) {
+    const g = new THREE.CylinderGeometry(rTop, rBottom, 1, 40, 5, true); g.translate(0, 0.5, 0);
+    const q = g.attributes.position;
+    for (let i = 0; i < q.count; i++) {
+      const y = q.getY(i), a = Math.atan2(q.getZ(i), q.getX(i));
+      q.setY(i, y * (1 - depth + depth * (0.5 + 0.5 * Math.sin(a * tongues)) * (0.75 + 0.25 * Math.sin(a * 3 + 1))));   // the higher up, the more it breaks into tongues
+    }
+    g.computeVertexNormals(); return g;
+  }
+  const crownMat = toon('#bff0e2', { shade: '#7fd6cc', side: THREE.DoubleSide, cut: 0.1 });
+  const spoutMat = toon('#e6fbf3', { shade: '#a9e3dc', side: THREE.DoubleSide, cut: 0.1 });
+  const crowns = Array.from({ length: 3 }, () => {
+    const g = new THREE.Group();
+    const wall = withOutline(new THREE.Mesh(crownGeo(1, 1.35, 9, 0.6), crownMat), 2.2, WATER_INK);
+    const spout = withOutline(new THREE.Mesh(crownGeo(0.55, 0.18, 5, 0.35), spoutMat), 2.2, WATER_INK);
+    g.add(wall, spout); g.visible = false; g.userData = { wall, spout, t0: -9, dur: 1, power: 0 };
+    scene.add(g); return g;
+  });
+  let nextCrown = 0;
+  function crown(x, z, power) {
+    const c = crowns[nextCrown++ % crowns.length];
+    c.position.set(x, 0, z); c.rotation.y = Math.random() * 6.283;
+    Object.assign(c.userData, { t0: elapsed, dur: 0.9 + 0.7 * power, power });
+    c.visible = true;
+  }
+  function splash(x, y, z, n = 7, power = 1, big = 1) {      // power > 1 throws the drops higher and wider; big > 1 makes them fat blobs
     for (let i = 0; i < n; i++) {
       const d = drops[nextDrop++ % drops.length];
-      const a = Math.random() * Math.PI * 2, sp = (1 + Math.random() * 2.2) * power, s = (0.09 + Math.random() * 0.13) * (0.8 + 0.2 * power);
+      const a = Math.random() * Math.PI * 2, sp = (1 + Math.random() * 2.2) * power, s = (0.09 + Math.random() * 0.13) * (0.8 + 0.2 * power) * big;
       d.scale.set(s, s * 1.5, s);
       d.position.set(x, y + 0.2, z);
       d.userData.v.set(Math.cos(a) * sp, (4 + Math.random() * 3) * (0.6 + 0.4 * power), Math.sin(a) * sp);
@@ -1156,7 +1183,9 @@ ${WAVES.map(w => `      h += ${f(w.amp)} * sin(${f(w.k)} * dot(vec2(${f(w.dir[0]
   // A big impact (a charged launch or a hard landing) throws water and fish into the air.
   // 'power' runs from 0 to 1.
   function burst(x, z, power) {
-    splash(x, boatState.y - 0.5, z, 10 + Math.round(power * 34), 1 + power * 1.7);
+    crown(x, z, power);
+    splash(x, 0.3, z, 12 + Math.round(power * 40), 1 + power * 2.2);                  // spray
+    splash(x, 0.3, z, 4 + Math.round(power * 14), 1 + power * 1.3, 2.6 + power);      // fat blobs of water
     ripples[RIP.taps + (wakeSlot++ % (RIP.count - RIP.taps))].set(x, z, elapsed, 0.6 + 1.5 * power);
     if (power < 0.3) return;
     // fish come up from under the boat and are flung out of the water
@@ -1172,7 +1201,6 @@ ${WAVES.map(w => `      h += ${f(w.amp)} * sin(${f(w.k)} * dot(vec2(${f(w.dir[0]
   // TRICKS: swipe while the boat is in the air. It flips once towards the swipe and gets a push that way,
   // so tricks are also how you steer and gain distance in mid-air.
   let capsize = null;                     // set after a bad landing: { axis, a0, t0 }, the boat floats upside down for a moment
-  const CAPSIZE_TIME = 1.5, RIGHTING_TIME = 0.7;
   let trick = null;                       // { axis (in the boat's own space), t0 } while a flip is turning
   const FLIP_TIME = 0.6, FLIP_PUSH = 10;
   const trickQ = new THREE.Quaternion(), trickPivot = new THREE.Vector3(0, 1.6, 0), trickTmp = new THREE.Vector3();
@@ -1421,9 +1449,9 @@ ${WAVES.map(w => `      h += ${f(w.amp)} * sin(${f(w.k)} * dot(vec2(${f(w.dir[0]
         // Bad landing: the boat comes down upside down, floats there for a moment, then rolls back up.
         // It loses most of its speed and stays slow and waterlogged for a few seconds after.
         const u = (elapsed - trick.t0) / FLIP_TIME;
-        capsize = { axis: trick.axis.clone(), a0: u * u * (3 - 2 * u) * Math.PI * 2, t0: elapsed };
-        boatVel.multiplyScalar(0.3); boatState.soakedUntil = elapsed + CAPSIZE_TIME + RIGHTING_TIME + 4;
-        splash(cx, boatState.y - 0.4, cz, 22, 1.6); tone(140, 60, 0.35, 0.22);
+        capsize = { axis: trick.axis.clone(), ang: u * u * (3 - 2 * u) * Math.PI * 2, vel: 5.5, t0: elapsed };   // it hits the water still turning
+        boatVel.multiplyScalar(0.45); boatState.soakedUntil = elapsed + 4.5;
+        crown(cx, cz, 0.45); splash(cx, 0.3, cz, 22, 1.6); tone(140, 60, 0.35, 0.22);
         try { if (navigator.vibrate) navigator.vibrate([30, 40, 30]); } catch (err) {}
         say('Skit', ['Ow. That was the roof.', 'We landed on Dji.', 'Finish the flip NEXT time.', 'Everything is wet now.'][Math.floor(Math.random() * 4)], 3, 3);
       } else if (boatState.tricks > 0) {
@@ -1453,16 +1481,18 @@ ${WAVES.map(w => `      h += ${f(w.amp)} * sin(${f(w.k)} * dot(vec2(${f(w.dir[0]
       if (u >= 1) trick = null;
     }
     if (capsize) {
-      const t = elapsed - capsize.t0;
-      let ang;
-      if (t < CAPSIZE_TIME) { const k = Math.min(1, t / 0.25); ang = capsize.a0 + (Math.PI - capsize.a0) * k + Math.sin(t * 3) * 0.08; }   // settles belly-up and bobs
-      else { const k = Math.min(1, (t - CAPSIZE_TIME) / RIGHTING_TIME); ang = Math.PI * (1 - k * k * (3 - 2 * k)); }                   // heaves itself upright
-      trickQ.setFromAxisAngle(capsize.axis, ang);
+      // The boat carries on rolling in the water. Its heavy keel pulls it upright (like a pendulum) while the
+      // water slows the roll, so it slaps down, wallows, swings past upright and settles. No pause upside down.
+      capsize.vel += (-13 * Math.sin(capsize.ang) - 3.0 * capsize.vel) * dt;
+      if (Math.abs(Math.sin(capsize.ang)) < 0.12 && Math.cos(capsize.ang) < 0 && Math.abs(capsize.vel) < 1.5) capsize.vel += 6 * dt * (capsize.vel >= 0 ? 1 : -1);   // never balances on its roof
+      capsize.ang += capsize.vel * dt;
+      const over = (1 - Math.cos(capsize.ang)) / 2;                    // 0 upright, 1 upside down
+      trickQ.setFromAxisAngle(capsize.axis, capsize.ang);
       boatBody.quaternion.premultiply(trickQ);
       boatBody.position.add(trickPivot).sub(trickTmp.copy(trickPivot).applyQuaternion(trickQ));
-      boatBody.position.y += 0.9 * Math.sin(Math.min(1, ang / Math.PI) * Math.PI / 2);     // an upturned hull floats higher
-      if (t < CAPSIZE_TIME) boatVel.multiplyScalar(Math.exp(-dt * 1.5));
-      if (t >= CAPSIZE_TIME + RIGHTING_TIME) { capsize = null; splash(cx, boatState.y, cz, 8); say('Dji', 'Right way up again. Mostly.', 2.5, 2); }
+      boatBody.position.y += 0.25 * over;                               // an upturned hull sits a little higher in the water
+      boatVel.multiplyScalar(Math.exp(-dt * 2.2 * over));               // dragging its mast through the water slows it
+      if (over < 0.002 && Math.abs(capsize.vel) < 0.3 && elapsed - capsize.t0 > 0.5) { capsize = null; say('Dji', 'Right way up again. Mostly.', 2.5, 2); }
     }
     if (boatState.air && !game.trickHint && boatState.y > 4) { game.trickHint = true; say('Dji', 'Swipe while we\'re in the air!', 3.5, 2); }
     const squash = Math.max(-0.07, Math.min(0.09, boatState.vy * 0.03));    // stretches as it pops up, squashes as it lands
@@ -1595,6 +1625,17 @@ ${WAVES.map(w => `      h += ${f(w.amp)} * sin(${f(w.k)} * dot(vec2(${f(w.dir[0]
       if (elapsed > gullFlight.until) { gulls.visible = false; gullFlight.next = elapsed + 18 + Math.random() * 16; }
     }
 
+    // Water crowns rise fast, spread, and sink back
+    for (const c of crowns) {
+      if (!c.visible) continue;
+      const u = c.userData, k = (elapsed - u.t0) / u.dur;
+      if (k >= 1) { c.visible = false; continue; }
+      const up = Math.sin(Math.PI * Math.pow(k, 0.55)), out = 1 - Math.pow(1 - k, 2.2);    // quick up, slow fall; always spreading
+      const R = (1.6 + 2.6 * u.power) * (0.55 + 0.75 * out), H = (1.5 + 7.5 * u.power) * up;
+      u.wall.scale.set(R, Math.max(0.01, H), R);
+      u.spout.scale.set(R * 0.8, Math.max(0.01, H * 1.75 * Math.sin(Math.PI * Math.min(1, k * 1.25))), R * 0.8);
+      c.position.y = waveHeight(c.position.x, c.position.z, waveTime, cur.amp) - 0.25;
+    }
     // Drops fly up and fall back into the sea
     for (const d of drops) {
       if (!d.visible) continue;

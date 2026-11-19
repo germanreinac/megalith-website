@@ -29,10 +29,12 @@
   also clear signs, billboards and lighthouses (`L.top`).
 - Tricks: a swipe while the boat is in the air (`startTrick`) flips it once towards the swipe, pushes it that way
   (`FLIP_PUSH`) and adds a little lift so flips chain. Landing mid-flip is a bad landing: the boat capsizes
-  (`capsize`: floats upside down about 1.5 s, rolls upright, then stays slow and "soaked" for 4 s); landing after
+  (`capsize`: it keeps rolling in the water and a pendulum-style keel swings it upright in about 1.5 s, with NO pause
+  upside down, which Germán found unnatural; then it stays slow and "soaked" for a few seconds); landing after
   finished flips gives a small speed burst. On the water the same drag looks around.
-- Impact scales with charge: `burst()` throws more water, a bigger ripple and up to five fish into the air on a
-  charged launch and on hard landings.
+- Impact scales with charge: `burst()` raises a water crown (`crown()`: a ring wall with tongues plus a centre
+  spout, up to about 9 units tall), spray, fat blobs, a bigger ripple and up to five fish, on a charged launch and on
+  hard landings. Germán wants the water, not only the fish, to carry the impact.
 - Camera: free drag as before, and while holding (fast mode) it eases round to sit behind the boat's direction of
   travel, so sliding the thumb steers and the view turns with it.
 - iPhone: touches on the canvas are cancelled (`touchstart`/`touchmove`/`touchend` preventDefault) to stop the
